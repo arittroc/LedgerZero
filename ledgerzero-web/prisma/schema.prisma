@@ -1,0 +1,42 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"  
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Invoice {
+  id             String           @id @default(cuid())
+  clientName     String
+  amount         Float
+  date           DateTime
+  status         String           @default("UNPAID")
+  reconciliation Reconciliation?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model BankTransaction {
+  id             String           @id @default(cuid())
+  description    String
+  amount         Float
+  date           DateTime
+  reconciliation Reconciliation?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model Reconciliation {
+  id            String          @id @default(cuid())
+  invoiceId     String          @unique
+  invoice       Invoice         @relation(fields: [invoiceId], references: [id])
+  transactionId String          @unique
+  transaction   BankTransaction @relation(fields: [transactionId], references: [id])
+  createdAt     DateTime        @default(now())
+}

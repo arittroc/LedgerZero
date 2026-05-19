@@ -1,0 +1,626 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LedgerZero Reconciliation Dashboard</title>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    :root {
+      --bg:      oklch(99% 0.002 240);
+      --surface: oklch(100% 0 0);
+      --fg:      oklch(18% 0.012 250);
+      --muted:   oklch(54% 0.012 250);
+      --border:  oklch(92% 0.005 250);
+      --accent:  oklch(58% 0.18 255);
+      --font-display: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif;
+      --font-body: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, sans-serif;
+      --glass: oklch(100% 0 0 / 0.44);
+      --glass-border: oklch(100% 0 0 / 0.52);
+      --success: oklch(64% 0.145 150);
+      --success-soft: oklch(97% 0.03 155 / 0.68);
+      --success-border: oklch(84% 0.08 150 / 0.78);
+      --danger: oklch(58% 0.19 25);
+      --shadow: 0 28px 78px oklch(18% 0.012 250 / 0.12);
+    }
+    * { box-sizing: border-box; }
+    html {
+      min-height: 100%;
+      color: var(--fg);
+      font-family: var(--font-body);
+      background: var(--bg);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: geometricPrecision;
+    }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      overflow-x: hidden;
+      background:
+        radial-gradient(circle at 11% 8%, oklch(93% 0.034 250 / 0.78), transparent 32rem),
+        radial-gradient(circle at 86% 18%, oklch(94% 0.048 164 / 0.74), transparent 30rem),
+        radial-gradient(circle at 66% 92%, oklch(96% 0.035 210 / 0.72), transparent 34rem),
+        linear-gradient(135deg, oklch(99% 0.002 240), oklch(97% 0.009 232));
+    }
+    button { font: inherit; }
+    .app-shell {
+      position: relative;
+      isolation: isolate;
+      min-height: 100vh;
+      padding: 24px clamp(18px, 4vw, 56px) 48px;
+    }
+    .app-shell::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background-image:
+        linear-gradient(oklch(100% 0 0 / 0.3) 1px, transparent 1px),
+        linear-gradient(90deg, oklch(100% 0 0 / 0.3) 1px, transparent 1px);
+      background-size: 52px 52px;
+      mask-image: linear-gradient(to bottom, oklch(0 0 0 / 0.56), transparent 80%);
+    }
+    .top-nav {
+      position: sticky;
+      top: 18px;
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 16px;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 12px;
+      border: 1px solid var(--glass-border);
+      border-radius: 28px;
+      background: oklch(100% 0 0 / 0.42);
+      box-shadow: 0 18px 50px oklch(18% 0.012 250 / 0.08);
+      backdrop-filter: blur(26px) saturate(1.18);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      padding-left: 10px;
+      color: var(--fg);
+      font-family: var(--font-display);
+      font-size: 18px;
+      font-weight: 760;
+      letter-spacing: 0;
+      white-space: nowrap;
+    }
+    .brand-mark {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      place-items: center;
+      border-radius: 12px;
+      background: var(--fg);
+      color: var(--surface);
+      box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.2);
+    }
+    .unreconciled-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 42px;
+      padding: 0 18px;
+      border: 1px solid oklch(100% 0 0 / 0.58);
+      border-radius: 999px;
+      background: oklch(100% 0 0 / 0.52);
+      color: var(--muted);
+      box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.72);
+      font-size: 14px;
+      font-weight: 650;
+      white-space: nowrap;
+      backdrop-filter: blur(18px);
+    }
+    .unreconciled-pill strong {
+      margin-left: 6px;
+      color: var(--fg);
+      font-variant-numeric: tabular-nums;
+    }
+    .approve-button {
+      justify-self: end;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      min-height: 44px;
+      padding: 0 18px;
+      border: 0;
+      border-radius: 999px;
+      background: var(--fg);
+      color: var(--surface);
+      box-shadow: 0 15px 35px oklch(18% 0.012 250 / 0.24), inset 0 1px 0 oklch(100% 0 0 / 0.18);
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+      white-space: nowrap;
+    }
+    .approve-button:hover {
+      transform: translateY(-1px);
+      background: oklch(24% 0.02 250);
+      box-shadow: 0 19px 44px oklch(18% 0.012 250 / 0.27), inset 0 1px 0 oklch(100% 0 0 / 0.2);
+    }
+    .approve-button:active { transform: translateY(0); }
+    .workspace {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
+      gap: 18px;
+      align-items: start;
+      max-width: 1240px;
+      margin: 54px auto 0;
+    }
+    .column {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid oklch(100% 0 0 / 0.44);
+      border-radius: 30px;
+      background: oklch(100% 0 0 / 0.36);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(28px) saturate(1.14);
+    }
+    .column-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 76px;
+      padding: 22px 22px 16px;
+      border-bottom: 1px solid oklch(100% 0 0 / 0.42);
+    }
+    .column-title {
+      margin: 0;
+      font-family: var(--font-display);
+      font-size: clamp(21px, 2.2vw, 28px);
+      font-weight: 740;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .column-count {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 650;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .card-stack {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+    }
+    .record-card {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 16px;
+      align-items: center;
+      min-height: 106px;
+      width: 100%;
+      padding: 18px;
+      border: 1px solid oklch(100% 0 0 / 0.5);
+      border-radius: 22px;
+      background: var(--glass);
+      color: var(--fg);
+      box-shadow: 0 16px 36px oklch(18% 0.012 250 / 0.06), inset 0 1px 0 oklch(100% 0 0 / 0.66);
+      backdrop-filter: blur(22px) saturate(1.14);
+      cursor: pointer;
+      text-align: left;
+      transition: transform 180ms ease, border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+    }
+    .record-card:hover,
+    .record-card:focus-visible {
+      transform: scale(1.01);
+      outline: 0;
+      border-color: oklch(100% 0 0 / 0.72);
+      box-shadow: 0 20px 45px oklch(18% 0.012 250 / 0.1), inset 0 1px 0 oklch(100% 0 0 / 0.8);
+    }
+    .record-card.matched {
+      border-color: var(--success-border);
+      background: var(--success-soft);
+    }
+    .record-card.selected {
+      box-shadow: 0 0 0 3px oklch(58% 0.18 255 / 0.14), 0 22px 48px oklch(18% 0.012 250 / 0.12), inset 0 1px 0 oklch(100% 0 0 / 0.78);
+    }
+    .record-card.approved {
+      border-color: oklch(86% 0.06 150 / 0.9);
+      background: oklch(98% 0.022 155 / 0.78);
+    }
+    .record-main { min-width: 0; }
+    .record-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 9px;
+      overflow-wrap: anywhere;
+      color: var(--fg);
+      font-size: 17px;
+      font-weight: 760;
+      line-height: 1.15;
+      letter-spacing: 0;
+    }
+    .record-date {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      line-height: 1.2;
+    }
+    .status-line {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 650;
+    }
+    .record-card.matched .status-line,
+    .record-card.approved .status-line { color: oklch(40% 0.12 150); }
+    .amount {
+      align-self: start;
+      color: var(--fg);
+      font-size: clamp(18px, 2vw, 24px);
+      font-weight: 780;
+      line-height: 1;
+      letter-spacing: 0;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+    .amount.negative { color: var(--danger); }
+    .match-dot {
+      display: inline-flex;
+      width: 8px;
+      height: 8px;
+      flex: 0 0 auto;
+      border-radius: 999px;
+      background: var(--success);
+      box-shadow: 0 0 0 4px oklch(64% 0.145 150 / 0.14);
+    }
+    .bridge-column {
+      display: grid;
+      gap: 14px;
+      padding-top: 95px;
+      pointer-events: none;
+    }
+    .bridge-slot {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 106px;
+    }
+    .bridge-slot.matched::before {
+      content: "";
+      position: absolute;
+      left: -18px;
+      right: -18px;
+      top: 50%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, oklch(64% 0.145 150 / 0.52), transparent);
+      transform: translateY(-50%);
+    }
+    .bridge-badge {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      width: 46px;
+      height: 46px;
+      place-items: center;
+      border: 1px solid oklch(100% 0 0 / 0.64);
+      border-radius: 999px;
+      background: oklch(97% 0.03 155 / 0.72);
+      color: var(--success);
+      box-shadow: 0 18px 40px oklch(64% 0.145 150 / 0.2), inset 0 1px 0 oklch(100% 0 0 / 0.7);
+      backdrop-filter: blur(18px);
+    }
+    .bridge-slot.selected .bridge-badge,
+    .bridge-slot.approved .bridge-badge { animation: approvePulse 900ms ease both; }
+    @keyframes approvePulse {
+      0% { transform: scale(1); }
+      42% { transform: scale(1.14); }
+      100% { transform: scale(1); }
+    }
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 24px;
+      z-index: 30;
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 44px;
+      max-width: calc(100vw - 32px);
+      padding: 0 16px;
+      border: 1px solid oklch(100% 0 0 / 0.54);
+      border-radius: 999px;
+      background: oklch(100% 0 0 / 0.72);
+      color: var(--fg);
+      box-shadow: 0 20px 56px oklch(18% 0.012 250 / 0.14);
+      backdrop-filter: blur(20px);
+      font-size: 14px;
+      font-weight: 680;
+      opacity: 0;
+      transform: translate(-50%, 16px);
+      transition: opacity 180ms ease, transform 180ms ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .toast.visible {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+    .icon {
+      display: block;
+      width: 18px;
+      height: 18px;
+      flex: 0 0 auto;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+    }
+    .icon.small {
+      width: 15px;
+      height: 15px;
+    }
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+    @media (max-width: 900px) {
+      .app-shell { padding: 14px 14px 32px; }
+      .top-nav {
+        top: 10px;
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+        border-radius: 24px;
+      }
+      .brand {
+        justify-content: center;
+        padding-left: 0;
+      }
+      .unreconciled-pill,
+      .approve-button { width: 100%; }
+      .workspace {
+        grid-template-columns: 1fr;
+        margin-top: 34px;
+      }
+      .bridge-column { display: none; }
+      .column { border-radius: 26px; }
+      .record-card { min-height: 98px; }
+    }
+    @media (max-width: 520px) {
+      .column-head,
+      .card-stack {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+      .record-card { grid-template-columns: 1fr; }
+      .amount { justify-self: start; }
+      .toast {
+        border-radius: 22px;
+        white-space: normal;
+      }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useMemo, useState } = React;
+
+    const invoices = [
+      { id: "invoice-acme", name: "Acme Corp", amount: 1250, date: "May 1, 2026", matched: true, matchId: "acme", status: "Perfect match" },
+      { id: "invoice-stark", name: "Stark Industries", amount: 450, date: "May 2, 2026", matched: false, matchId: null, status: "Awaiting deposit" },
+      { id: "invoice-wayne", name: "Wayne Tech", amount: 3200, date: "May 3, 2026", matched: true, matchId: "wayne", status: "Perfect match" }
+    ];
+
+    const transactions = [
+      { id: "bank-acme", name: "WIRE IN ACME CORP", amount: 1250, date: "May 6, 2026", matched: true, matchId: "acme", status: "Ready to approve" },
+      { id: "bank-wayne", name: "STRIPE PAYOUT WT", amount: 3200, date: "May 6, 2026", matched: true, matchId: "wayne", status: "Ready to approve" },
+      { id: "bank-fast-net", name: "ACH DEP FAST NET", amount: -89.99, date: "May 7, 2026", matched: false, matchId: null, status: "Expense detected" }
+    ];
+
+    const bridgeRows = [
+      { id: "acme", type: "matched" },
+      { id: "stark-gap", type: "empty" },
+      { id: "wayne", type: "matched" }
+    ];
+
+    function formatCurrency(value) {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(value);
+    }
+
+    function CheckCircle2({ className = "icon" }) {
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="m9 12 2 2 4-4"></path>
+        </svg>
+      );
+    }
+
+    function Sparkles({ className = "icon" }) {
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9.9 4.24 8.72 7.7a2 2 0 0 1-1.25 1.25L4 10.13l3.47 1.18a2 2 0 0 1 1.25 1.25L9.9 16l1.18-3.44a2 2 0 0 1 1.25-1.25l3.47-1.18-3.47-1.18a2 2 0 0 1-1.25-1.25L9.9 4.24Z"></path>
+          <path d="M18 13v4"></path>
+          <path d="M20 15h-4"></path>
+        </svg>
+      );
+    }
+
+    function WalletCards({ className = "icon" }) {
+      return (
+        <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+          <rect width="18" height="14" x="3" y="5" rx="3"></rect>
+          <path d="M3 10h18"></path>
+          <path d="M7 15h.01"></path>
+          <path d="M11 15h2"></path>
+        </svg>
+      );
+    }
+
+    function Column({ title, count, children }) {
+      return (
+        <section className="column" aria-label={title}>
+          <header className="column-head">
+            <h2 className="column-title">{title}</h2>
+            <span className="column-count">{count}</span>
+          </header>
+          <div className="card-stack">{children}</div>
+        </section>
+      );
+    }
+
+    function RecordCard({ item, kind, selectedMatch, approved, onSelect }) {
+      const isSelected = item.matchId && selectedMatch === item.matchId;
+      const isNegative = item.amount < 0;
+      const className = [
+        "record-card",
+        item.matched ? "matched" : "",
+        isSelected ? "selected" : "",
+        approved && item.matched ? "approved" : ""
+      ].filter(Boolean).join(" ");
+
+      return (
+        <button className={className} type="button" onClick={() => item.matchId && onSelect(item.matchId)}>
+          <span className="record-main">
+            <span className="record-label">
+              {item.matched && <span className="match-dot" aria-hidden="true"></span>}
+              {item.name}
+            </span>
+            <span className="record-date">{item.date}</span>
+            <span className="status-line">
+              {item.matched ? <CheckCircle2 className="icon small" /> : <Sparkles className="icon small" />}
+              {approved && item.matched ? "Approved match" : item.status}
+            </span>
+          </span>
+          <span className={isNegative ? "amount negative" : "amount"}>{formatCurrency(item.amount)}</span>
+          <span className="sr-only">{kind}</span>
+        </button>
+      );
+    }
+
+    function Bridge({ rows, selectedMatch, approved }) {
+      return (
+        <div className="bridge-column" aria-hidden="true">
+          {rows.map((row) => {
+            const isMatched = row.type === "matched";
+            const className = [
+              "bridge-slot",
+              isMatched ? "matched" : "",
+              row.id === selectedMatch ? "selected" : "",
+              approved && isMatched ? "approved" : ""
+            ].filter(Boolean).join(" ");
+
+            return (
+              <div className={className} key={row.id}>
+                {isMatched && (
+                  <span className="bridge-badge">
+                    <CheckCircle2 />
+                  </span>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      );
+    }
+
+    function App() {
+      const [selectedMatch, setSelectedMatch] = useState("acme");
+      const [approved, setApproved] = useState(false);
+      const matchedCount = useMemo(() => invoices.filter((item) => item.matched).length, []);
+
+      function approveAll() {
+        setApproved(true);
+        setSelectedMatch("wayne");
+        window.setTimeout(() => setSelectedMatch("acme"), 1050);
+      }
+
+      return (
+        <main className="app-shell">
+          <nav className="top-nav" aria-label="LedgerZero dashboard">
+            <div className="brand">
+              <span className="brand-mark"><WalletCards /></span>
+              LedgerZero
+            </div>
+            <div className="unreconciled-pill">
+              Total Unreconciled:<strong>$1,700.00</strong>
+            </div>
+            <button className="approve-button" type="button" onClick={approveAll}>
+              <CheckCircle2 />
+              {approved ? "Matches Approved" : "Approve All Matches"}
+            </button>
+          </nav>
+
+          <h1 className="sr-only">LedgerZero invoice reconciliation dashboard</h1>
+
+          <section className="workspace" aria-label="Invoice reconciliation workspace">
+            <Column title="Outstanding Invoices" count={`${matchedCount} matched`}>
+              {invoices.map((invoice) => (
+                <RecordCard
+                  item={invoice}
+                  kind="invoice"
+                  key={invoice.id}
+                  selectedMatch={selectedMatch}
+                  approved={approved}
+                  onSelect={setSelectedMatch}
+                />
+              ))}
+            </Column>
+
+            <Bridge rows={bridgeRows} selectedMatch={selectedMatch} approved={approved} />
+
+            <Column title="Live Bank Feed" count="3 transactions">
+              {transactions.map((transaction) => (
+                <RecordCard
+                  item={transaction}
+                  kind="bank transaction"
+                  key={transaction.id}
+                  selectedMatch={selectedMatch}
+                  approved={approved}
+                  onSelect={setSelectedMatch}
+                />
+              ))}
+            </Column>
+          </section>
+
+          <div className={approved ? "toast visible" : "toast"} role="status" aria-live="polite">
+            <CheckCircle2 className="icon small" />
+            2 matches approved. Stark Industries remains unreconciled.
+          </div>
+        </main>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
