@@ -32,7 +32,9 @@ export function LedgerDashboard() {
 
   const fetchLedgerData = useCallback(async () => {
     try {
-      const response = await fetch("/api/ledger");
+      const response = await fetch("/api/ledger", {
+        credentials: "include",
+      });
       if (response.status === 401) {
         setIsAuthenticated(false);
         setInvoices([]);
@@ -53,7 +55,10 @@ export function LedgerDashboard() {
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", { method: "POST" });
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
       setIsAuthenticated(false);
       setInvoices([]);
       setBankFeed([]);
@@ -107,6 +112,7 @@ export function LedgerDashboard() {
       const response = await fetch("/api/reconcile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           matches: reconciliation.matchedPairs.map((p) => ({
             invoiceId: p.invoice.id,
@@ -149,6 +155,7 @@ export function LedgerDashboard() {
       const response = await fetch("/api/feedback", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ message: feedbackMessage, type: feedbackType }),
       });
 
