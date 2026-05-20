@@ -2,7 +2,6 @@ import { CheckCircle2, Wallet, LogOut, LogIn } from "lucide-react";
 import { formatCurrency } from "@/utils/format";
 import Link from "next/link";
 
-
 interface DashboardHeaderProps {
   totalUnreconciled: number;
   onApprove: () => void;

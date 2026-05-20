@@ -20,7 +20,9 @@ export function ReconciliationModal({
 }: ReconciliationModalProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(null);
+  const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | null>(
+    null,
+  );
 
   const handleReconcile = async () => {
     if (!selectedInvoiceId) return;
@@ -54,7 +56,7 @@ export function ReconciliationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div 
+      <div
         className="relative w-full max-w-2xl overflow-hidden rounded-3xl border border-white/10 bg-[#121212]/90 backdrop-blur-2xl shadow-2xl animate-in zoom-in-95 duration-300"
         onClick={(e) => e.stopPropagation()}
       >
@@ -66,8 +68,12 @@ export function ReconciliationModal({
           {/* Header */}
           <div className="flex items-center justify-between border-b border-white/5 p-6">
             <div>
-              <h2 className="text-xl font-semibold text-white tracking-tight">Reconcile Transaction</h2>
-              <p className="text-sm text-gray-400 mt-1">Select an invoice to match with this bank record</p>
+              <h2 className="text-xl font-semibold text-white tracking-tight">
+                Reconcile Transaction
+              </h2>
+              <p className="text-sm text-gray-400 mt-1">
+                Select an invoice to match with this bank record
+              </p>
             </div>
             <button
               onClick={onClose}
@@ -81,19 +87,29 @@ export function ReconciliationModal({
           <div className="bg-white/5 p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">Bank Transaction</p>
-                <h3 className="text-white font-medium">{transaction.description}</h3>
-                <p className="text-sm text-gray-400">{new Date(transaction.date).toLocaleDateString()}</p>
+                <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-1">
+                  Bank Transaction
+                </p>
+                <h3 className="text-white font-medium">
+                  {transaction.description}
+                </h3>
+                <p className="text-sm text-gray-400">
+                  {new Date(transaction.date).toLocaleDateString()}
+                </p>
               </div>
               <div className="text-right">
-                <p className="text-2xl font-bold text-white">{formatCurrency(transaction.amount)}</p>
+                <p className="text-2xl font-bold text-white">
+                  {formatCurrency(transaction.amount)}
+                </p>
               </div>
             </div>
           </div>
 
           {/* Invoices List */}
           <div className="flex-1 overflow-y-auto p-6 space-y-3">
-            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">Available Invoices</p>
+            <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+              Available Invoices
+            </p>
             {unpaidInvoices.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-32 text-gray-500 italic">
                 No unpaid invoices found.
@@ -114,14 +130,24 @@ export function ReconciliationModal({
                     }`}
                   >
                     <div className="flex items-center gap-4">
-                      <div className={`size-10 rounded-xl flex items-center justify-center transition-colors ${
-                        isSelected ? "bg-accent text-white" : "bg-white/5 text-gray-400"
-                      }`}>
-                        {isSelected ? <CheckCircle2 className="size-5" /> : <div className="size-2 rounded-full bg-current" />}
+                      <div
+                        className={`size-10 rounded-xl flex items-center justify-center transition-colors ${
+                          isSelected
+                            ? "bg-accent text-white"
+                            : "bg-white/5 text-gray-400"
+                        }`}
+                      >
+                        {isSelected ? (
+                          <CheckCircle2 className="size-5" />
+                        ) : (
+                          <div className="size-2 rounded-full bg-current" />
+                        )}
                       </div>
                       <div className="text-left">
                         <div className="flex items-center gap-2">
-                          <p className={`font-medium transition-colors ${isSelected ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
+                          <p
+                            className={`font-medium transition-colors ${isSelected ? "text-white" : "text-gray-300 group-hover:text-white"}`}
+                          >
                             {invoice.clientName}
                           </p>
                           {isExactMatch && (
@@ -131,11 +157,16 @@ export function ReconciliationModal({
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-gray-500">Invoice #{invoice.id.slice(-6).toUpperCase()} • {new Date(invoice.date).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">
+                          Invoice #{invoice.id.slice(-6).toUpperCase()} •{" "}
+                          {new Date(invoice.date).toLocaleDateString()}
+                        </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`text-lg font-bold transition-colors ${isSelected ? "text-white" : "text-gray-300 group-hover:text-white"}`}>
+                      <p
+                        className={`text-lg font-bold transition-colors ${isSelected ? "text-white" : "text-gray-300 group-hover:text-white"}`}
+                      >
                         {formatCurrency(invoice.amount)}
                       </p>
                     </div>

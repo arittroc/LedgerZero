@@ -62,10 +62,8 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("Reconciliation error:", error);
-    const message = error instanceof Error ? error.message : "Reconciliation failed";
-    return NextResponse.json(
-      { error: message },
-      { status: 500 },
-    );
+    const message =
+      error instanceof Error ? error.message : "Reconciliation failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

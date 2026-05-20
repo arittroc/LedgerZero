@@ -19,7 +19,10 @@ export async function POST(request: Request) {
     const transactions = await request.json();
 
     if (!Array.isArray(transactions)) {
-      return NextResponse.json({ error: "Invalid data format" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid data format" },
+        { status: 400 },
+      );
     }
 
     // Map incoming data to BankTransaction schema and ensure userId is set

@@ -27,7 +27,8 @@ export function LedgerDashboard() {
   const [toastMessage, setToastMessage] = useState("");
 
   // Manual Reconciliation state
-  const [reconcilingTransaction, setReconcilingTransaction] = useState<BankFeedItem | null>(null);
+  const [reconcilingTransaction, setReconcilingTransaction] =
+    useState<BankFeedItem | null>(null);
 
   // Feedback state
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -242,9 +243,7 @@ export function LedgerDashboard() {
         />
 
         <div className="flex flex-col">
-          {isAuthenticated && (
-            <CsvUploader onUploadSuccess={fetchLedgerData} />
-          )}
+          {isAuthenticated && <CsvUploader onUploadSuccess={fetchLedgerData} />}
           <RightColumn
             bankFeed={bankFeed}
             activeMatchId={selectedMatch}
@@ -367,7 +366,8 @@ export function LedgerDashboard() {
         aria-live="polite"
       >
         <CheckCircle2 className="size-[15px] text-success" />
-        {toastMessage || `${reconciliation.matchedPairs.length} matches approved.`}
+        {toastMessage ||
+          `${reconciliation.matchedPairs.length} matches approved.`}
       </div>
 
       <CookieConsent />

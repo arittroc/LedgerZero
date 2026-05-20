@@ -70,7 +70,13 @@ export default function SignupPage() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, oklch(14% 0.018 250), oklch(16% 0.025 265))" }}>
+    <main
+      className="min-h-screen flex items-center justify-center px-4"
+      style={{
+        background:
+          "linear-gradient(135deg, oklch(14% 0.018 250), oklch(16% 0.025 265))",
+      }}
+    >
       {/* Background glow orbs */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 h-96 w-96 rounded-full bg-accent/10 blur-[120px]" />
@@ -141,7 +147,9 @@ export default function SignupPage() {
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-300 transition-colors"
                     tabIndex={-1}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                   >
                     {showPassword ? (
                       <EyeOff className="size-4" />
