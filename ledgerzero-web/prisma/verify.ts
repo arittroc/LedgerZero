@@ -19,7 +19,9 @@ async function verify() {
     console.log(`✅ Found ${paidInvoices.length} PAID Invoices:`);
     if (paidInvoices.length > 0) {
       paidInvoices.forEach((inv) => {
-        console.log(` - [${inv.id}] ${inv.clientName}: $${inv.amount} (Updated: ${inv.updatedAt})`);
+        console.log(
+          ` - [${inv.id}] ${inv.clientName}: $${inv.amount} (Updated: ${inv.updatedAt})`,
+        );
       });
     } else {
       console.log(" - No paid invoices found.");
@@ -31,11 +33,11 @@ async function verify() {
     const reconciliations = await prisma.reconciliation.findMany({
       include: {
         invoice: {
-          select: { clientName: true, amount: true }
+          select: { clientName: true, amount: true },
         },
         transaction: {
-          select: { description: true, amount: true }
-        }
+          select: { description: true, amount: true },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -43,13 +45,16 @@ async function verify() {
     console.log(`✅ Found ${reconciliations.length} Reconciliation Records:`);
     if (reconciliations.length > 0) {
       reconciliations.forEach((rec) => {
-        console.log(` - Match: Invoice ${rec.invoiceId} (${rec.invoice.clientName}) <-> Transaction ${rec.transactionId}`);
-        console.log(`   Amount: $${rec.invoice.amount} | Date: ${rec.createdAt}`);
+        console.log(
+          ` - Match: Invoice ${rec.invoiceId} (${rec.invoice.clientName}) <-> Transaction ${rec.transactionId}`,
+        );
+        console.log(
+          `   Amount: $${rec.invoice.amount} | Date: ${rec.createdAt}`,
+        );
       });
     } else {
       console.log(" - No reconciliation records found.");
     }
-
   } catch (error) {
     console.error("❌ Verification failed:", error);
   } finally {

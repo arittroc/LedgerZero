@@ -30,7 +30,7 @@ export interface ReconciliationResult {
  */
 export function reconcileLedger(
   invoices: Invoice[],
-  bankFeed: BankFeedItem[]
+  bankFeed: BankFeedItem[],
 ): ReconciliationResult {
   const matchedPairs: MatchedPair[] = [];
   const matchedInvoiceIds = new Set<string>();
@@ -42,9 +42,8 @@ export function reconcileLedger(
 
   for (const invoice of sortedInvoices) {
     const match = sortedBankFeed.find(
-      (item) => 
-        !matchedBankItemIds.has(item.id) && 
-        item.amount === invoice.amount
+      (item) =>
+        !matchedBankItemIds.has(item.id) && item.amount === invoice.amount,
     );
 
     if (match) {
@@ -60,11 +59,11 @@ export function reconcileLedger(
   }
 
   const unmatchedInvoices = invoices.filter(
-    (invoice) => !matchedInvoiceIds.has(invoice.id)
+    (invoice) => !matchedInvoiceIds.has(invoice.id),
   );
-  
+
   const unmatchedBankItems = bankFeed.filter(
-    (item) => !matchedBankItemIds.has(item.id)
+    (item) => !matchedBankItemIds.has(item.id),
   );
 
   return {

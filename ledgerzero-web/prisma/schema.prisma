@@ -1,8 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"  
 }
@@ -11,15 +9,34 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  invoices         Invoice[]
+  bankTransactions BankTransaction[]
+  reconciliations  Reconciliation[]
+  feedbacks        Feedback[]
+}
+
 model Invoice {
   id             String           @id @default(cuid())
   clientName     String
   amount         Float
   date           DateTime
   status         String           @default("UNPAID")
+  
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+
   reconciliation Reconciliation?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
+  @@index([userId])
 }
 
 model BankTransaction {
@@ -27,16 +44,43 @@ model BankTransaction {
   description    String
   amount         Float
   date           DateTime
+  
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+
   reconciliation Reconciliation?
   createdAt      DateTime         @default(now())
   updatedAt      DateTime         @updatedAt
+
+  @@index([userId])
 }
 
 model Reconciliation {
   id            String          @id @default(cuid())
+  
   invoiceId     String          @unique
   invoice       Invoice         @relation(fields: [invoiceId], references: [id])
+  
   transactionId String          @unique
   transaction   BankTransaction @relation(fields: [transactionId], references: [id])
+
+  userId         String
+  user           User             @relation(fields: [userId], references: [id])
+
   createdAt     DateTime        @default(now())
+
+  @@index([userId])
+}
+
+model Feedback {
+  id        String   @id @default(cuid())
+  message   String
+  type      String   @default("BUG") // BUG, FEATURE, OTHER
+  
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }

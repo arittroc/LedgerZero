@@ -17,7 +17,10 @@ export function RightColumn({
   reconciliation,
 }: RightColumnProps) {
   return (
-    <section className="liquid-column min-w-0 overflow-hidden" aria-label="Live Bank Feed">
+    <section
+      className="liquid-column min-w-0 overflow-hidden"
+      aria-label="Live Bank Feed"
+    >
       <header className="flex min-h-[76px] items-center justify-between gap-[14px] border-b border-white/42 px-[22px] pb-[16px] pt-[22px]">
         <h2 className="font-display text-[clamp(21px,2.2vw,28px)] font-[740] leading-none tracking-normal">
           Live Bank Feed
@@ -29,7 +32,7 @@ export function RightColumn({
       <div className="grid gap-[14px] p-[18px]">
         {bankFeed.map((item) => {
           const match = reconciliation.matchedPairs.find(
-            (p) => p.bankItem.id === item.id
+            (p) => p.bankItem.id === item.id,
           );
           const isMatched = !!match;
           const isActive = match ? match.id === activeMatchId : false;

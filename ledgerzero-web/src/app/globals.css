@@ -14,9 +14,13 @@
   --success-border: oklch(84% 0.08 150 / 0.78);
   --danger: oklch(58% 0.19 25);
   --shadow-custom: 0 28px 78px oklch(18% 0.012 250 / 0.12);
-  
-  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", system-ui, sans-serif;
-  --font-body: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+
+  --font-display:
+    -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
+    "Segoe UI", system-ui, sans-serif;
+  --font-body:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui,
+    sans-serif;
 }
 
 @theme {
@@ -32,10 +36,10 @@
   --color-success-soft: var(--success-soft);
   --color-success-border: var(--success-border);
   --color-danger: var(--danger);
-  
+
   --font-display: var(--font-display);
   --font-body: var(--font-body);
-  
+
   --shadow-custom: var(--shadow-custom);
 }
 
@@ -58,9 +62,21 @@
     margin: 0;
     overflow-x: hidden;
     background:
-      radial-gradient(circle at 11% 8%, oklch(93% 0.034 250 / 0.78), transparent 32rem),
-      radial-gradient(circle at 86% 18%, oklch(94% 0.048 164 / 0.74), transparent 30rem),
-      radial-gradient(circle at 66% 92%, oklch(96% 0.035 210 / 0.72), transparent 34rem),
+      radial-gradient(
+        circle at 11% 8%,
+        oklch(93% 0.034 250 / 0.78),
+        transparent 32rem
+      ),
+      radial-gradient(
+        circle at 86% 18%,
+        oklch(94% 0.048 164 / 0.74),
+        transparent 30rem
+      ),
+      radial-gradient(
+        circle at 66% 92%,
+        oklch(96% 0.035 210 / 0.72),
+        transparent 34rem
+      ),
       linear-gradient(135deg, oklch(99% 0.002 240), oklch(97% 0.009 232));
   }
 
@@ -88,7 +104,11 @@
       linear-gradient(oklch(100% 0 0 / 0.3) 1px, transparent 1px),
       linear-gradient(90deg, oklch(100% 0 0 / 0.3) 1px, transparent 1px);
     background-size: 52px 52px;
-    mask-image: linear-gradient(to bottom, oklch(0 0 0 / 0.56), transparent 80%);
+    mask-image: linear-gradient(
+      to bottom,
+      oklch(0 0 0 / 0.56),
+      transparent 80%
+    );
   }
 
   .glassmorphism {
@@ -104,9 +124,15 @@
   }
 
   @keyframes approvePulse {
-    0% { transform: scale(1); }
-    42% { transform: scale(1.14); }
-    100% { transform: scale(1); }
+    0% {
+      transform: scale(1);
+    }
+    42% {
+      transform: scale(1.14);
+    }
+    100% {
+      transform: scale(1);
+    }
   }
 
   .animate-approve-pulse {

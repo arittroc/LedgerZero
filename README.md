@@ -53,3 +53,7 @@ If you wish to run the project outside of Docker:
 
 ## License
 Private / All Rights Reserved
+
+## Roadmap
+
+Currently supports CSV file uploads for bank transactions. Direct banking integration via the Plaid API is planned for a future release.

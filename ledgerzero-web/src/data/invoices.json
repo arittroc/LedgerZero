@@ -2,19 +2,19 @@
   {
     "id": "INV-001",
     "clientName": "Acme Corp",
-    "amount": 1250.00,
+    "amount": 1250.0,
     "date": "2026-05-01"
   },
   {
     "id": "INV-002",
     "clientName": "Stark Industries",
-    "amount": 450.00,
+    "amount": 450.0,
     "date": "2026-05-02"
   },
   {
     "id": "INV-003",
     "clientName": "Wayne Tech",
-    "amount": 3200.00,
+    "amount": 3200.0,
     "date": "2026-05-03"
   }
 ]

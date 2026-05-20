@@ -19,7 +19,10 @@ export function LeftColumn({
   const matchedCount = reconciliation.matchedPairs.length;
 
   return (
-    <section className="liquid-column min-w-0 overflow-hidden" aria-label="Outstanding Invoices">
+    <section
+      className="liquid-column min-w-0 overflow-hidden"
+      aria-label="Outstanding Invoices"
+    >
       <header className="flex min-h-[76px] items-center justify-between gap-[14px] border-b border-white/42 px-[22px] pb-[16px] pt-[22px]">
         <h2 className="font-display text-[clamp(21px,2.2vw,28px)] font-[740] leading-none tracking-normal">
           Outstanding Invoices
@@ -31,7 +34,7 @@ export function LeftColumn({
       <div className="grid gap-[14px] p-[18px]">
         {invoices.map((invoice) => {
           const match = reconciliation.matchedPairs.find(
-            (p) => p.invoice.id === invoice.id
+            (p) => p.invoice.id === invoice.id,
           );
           const isMatched = !!match;
           const isActive = match ? match.id === activeMatchId : false;

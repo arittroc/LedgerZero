@@ -20,4 +20,3 @@ export function formatDate(date: string) {
   if (isNaN(d.getTime())) return date;
   return dateFormatter.format(d);
 }
-

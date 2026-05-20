@@ -1,11 +1,13 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { CheckCircle2, Loader2 } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, X } from "lucide-react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { LeftColumn } from "@/components/LeftColumn";
 import { MatchBridge, type BridgeRow } from "@/components/MatchBridge";
 import { RightColumn } from "@/components/RightColumn";
+import { CsvUploader } from "@/components/CsvUploader";
+import { CookieConsent } from "@/components/CookieConsent";
 import {
   type BankFeedItem,
   type Invoice,
@@ -21,14 +23,17 @@ export function LedgerDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
 
+  // Feedback state
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackType, setFeedbackType] = useState("BUG");
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+
   const fetchLedgerData = useCallback(async () => {
     try {
       const response = await fetch("/api/ledger");
       if (!response.ok) throw new Error("Failed to fetch ledger data");
       const data = await response.json();
-      
-      // Transform Prisma dates (ISO strings) to match UI expectations if needed
-      // For now, assume the UI can handle the string format or that we keep it simple
       setInvoices(data.invoices);
       setBankFeed(data.transactions);
     } catch (error) {
@@ -44,10 +49,9 @@ export function LedgerDashboard() {
 
   const reconciliation = useMemo(
     () => reconcileLedger(invoices, bankFeed),
-    [invoices, bankFeed]
+    [invoices, bankFeed],
   );
 
-  // Set initial selected match if available
   useEffect(() => {
     if (reconciliation.matchedPairs.length > 0 && !selectedMatch) {
       setSelectedMatch(reconciliation.matchedPairs[0].id);
@@ -58,15 +62,15 @@ export function LedgerDashboard() {
     () =>
       reconciliation.unmatchedInvoices.reduce(
         (sum, invoice) => sum + invoice.amount,
-        0
+        0,
       ),
-    [reconciliation]
+    [reconciliation],
   );
 
   const bridgeRows = useMemo((): BridgeRow[] => {
     return invoices.map((invoice) => {
       const match = reconciliation.matchedPairs.find(
-        (p) => p.invoice.id === invoice.id
+        (p) => p.invoice.id === invoice.id,
       );
       return {
         id: match ? match.id : `empty-${invoice.id}`,
@@ -79,34 +83,31 @@ export function LedgerDashboard() {
     if (reconciliation.matchedPairs.length === 0 || isSubmitting) return;
 
     setIsSubmitting(true);
-    
+
     try {
       const response = await fetch("/api/reconcile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          matches: reconciliation.matchedPairs.map(p => ({
+          matches: reconciliation.matchedPairs.map((p) => ({
             invoiceId: p.invoice.id,
-            transactionId: p.bankItem.id
-          }))
-        })
+            transactionId: p.bankItem.id,
+          })),
+        }),
       });
 
       if (!response.ok) throw new Error("Reconciliation failed");
 
-      // Visual feedback
       setIsApproved(true);
       setShowToast(true);
-      
-      // Cycle matches for visual feedback like prototype
-      const matchIds = reconciliation.matchedPairs.map(p => p.id);
+
+      const matchIds = reconciliation.matchedPairs.map((p) => p.id);
       let currentIndex = 0;
       const cycleInterval = setInterval(() => {
         currentIndex = (currentIndex + 1) % matchIds.length;
         setSelectedMatch(matchIds[currentIndex]);
       }, 800);
 
-      // Refresh data and reset state after animation
       setTimeout(async () => {
         clearInterval(cycleInterval);
         await fetchLedgerData();
@@ -114,10 +115,33 @@ export function LedgerDashboard() {
         setIsSubmitting(false);
         setShowToast(false);
       }, 4000);
-
     } catch (error) {
       console.error("Failed to approve matches:", error);
       setIsSubmitting(false);
+    }
+  };
+
+  const handleSubmitFeedback = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!feedbackMessage || isSubmittingFeedback) return;
+
+    setIsSubmittingFeedback(true);
+    try {
+      const response = await fetch("/api/feedback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: feedbackMessage, type: feedbackType }),
+      });
+
+      if (response.ok) {
+        setFeedbackMessage("");
+        setShowFeedbackModal(false);
+        // Could show a success toast here too
+      }
+    } catch (error) {
+      console.error("Failed to submit feedback:", error);
+    } finally {
+      setIsSubmittingFeedback(false);
     }
   };
 
@@ -157,14 +181,103 @@ export function LedgerDashboard() {
           isApproved={isApproved}
         />
 
-        <RightColumn
-          bankFeed={bankFeed}
-          activeMatchId={selectedMatch}
-          isApproved={isApproved}
-          onSelectMatch={setSelectedMatch}
-          reconciliation={reconciliation}
-        />
+        <div className="flex flex-col">
+          <CsvUploader onUploadSuccess={fetchLedgerData} />
+          <RightColumn
+            bankFeed={bankFeed}
+            activeMatchId={selectedMatch}
+            isApproved={isApproved}
+            onSelectMatch={setSelectedMatch}
+            reconciliation={reconciliation}
+          />
+        </div>
       </section>
+
+      {/* Floating Feedback Button */}
+      <button
+        onClick={() => setShowFeedbackModal(true)}
+        className="fixed right-8 bottom-8 z-40 flex h-14 w-14 items-center justify-center rounded-full bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl transition-all duration-300 hover:scale-110 hover:bg-white/20 active:scale-95 group"
+        aria-label="Report a bug"
+      >
+        <MessageSquare className="size-6 text-white group-hover:text-accent transition-colors" />
+      </button>
+
+      {/* Feedback Modal */}
+      {showFeedbackModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div
+            className="w-full max-w-md animate-in fade-in zoom-in duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative overflow-hidden rounded-3xl border border-white/10 bg-[#121212]/90 backdrop-blur-2xl p-8 shadow-2xl">
+              {/* Subtle background glow */}
+              <div className="absolute -top-24 -right-24 h-48 w-48 bg-accent/10 blur-[80px]" />
+
+              <div className="relative z-10">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="text-xl font-semibold text-white tracking-tight">
+                    Report an issue
+                  </h2>
+                  <button
+                    onClick={() => setShowFeedbackModal(false)}
+                    className="p-1 rounded-lg hover:bg-white/5 text-gray-400 transition-colors"
+                  >
+                    <X className="size-5" />
+                  </button>
+                </div>
+
+                <form onSubmit={handleSubmitFeedback}>
+                  <div className="mb-4">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Issue type
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      {["BUG", "FEATURE"].map((t) => (
+                        <button
+                          key={t}
+                          type="button"
+                          onClick={() => setFeedbackType(t)}
+                          className={`py-2 px-4 rounded-xl border text-sm font-medium transition-all ${
+                            feedbackType === t
+                              ? "bg-white/10 border-white/20 text-white"
+                              : "bg-transparent border-white/5 text-gray-500 hover:border-white/10"
+                          }`}
+                        >
+                          {t.charAt(0) + t.slice(1).toLowerCase()}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <label className="block text-sm font-medium text-gray-400 mb-2">
+                      Message
+                    </label>
+                    <textarea
+                      value={feedbackMessage}
+                      onChange={(e) => setFeedbackMessage(e.target.value)}
+                      placeholder="Describe what happened..."
+                      className="w-full h-32 bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-600 focus:outline-none focus:border-white/20 transition-colors resize-none"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={!feedbackMessage || isSubmittingFeedback}
+                    className="w-full py-4 bg-white text-black font-semibold rounded-2xl hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmittingFeedback ? (
+                      <Loader2 className="size-5 animate-spin" />
+                    ) : (
+                      "Submit Report"
+                    )}
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Toast Notification */}
       <div
@@ -177,6 +290,8 @@ export function LedgerDashboard() {
         <CheckCircle2 className="size-[15px] text-success" />
         {reconciliation.matchedPairs.length} matches approved.
       </div>
+
+      <CookieConsent />
     </main>
   );
 }

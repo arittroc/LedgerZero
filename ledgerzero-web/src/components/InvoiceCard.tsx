@@ -25,10 +25,10 @@ export function InvoiceCard({
         isMatched && isApproved
           ? "border-[oklch(86%_0.06_150_/_0.9)] bg-[oklch(98%_0.022_155_/_0.78)]"
           : isMatched
-          ? "border-success-border bg-success-soft"
-          : "",
+            ? "border-success-border bg-success-soft"
+            : "",
         isActive &&
-          "shadow-[0_0_0_3px_oklch(58%_0.18_255_/_0.14),0_22px_48px_oklch(18%_0.012_250_/_0.12),inset_0_1px_0_oklch(100%_0_0_/_0.78)]"
+          "shadow-[0_0_0_3px_oklch(58%_0.18_255_/_0.14),0_22px_48px_oklch(18%_0.012_250_/_0.12),inset_0_1px_0_oklch(100%_0_0_/_0.78)]",
       )}
       type="button"
       onClick={onSelect}
@@ -49,7 +49,7 @@ export function InvoiceCard({
         <span
           className={cx(
             "mt-[12px] flex items-center gap-[7px] text-[12px] font-[650]",
-            isMatched ? "text-[oklch(40%_0.12_150)]" : "text-muted"
+            isMatched ? "text-[oklch(40%_0.12_150)]" : "text-muted",
           )}
         >
           {isMatched ? (
@@ -60,8 +60,8 @@ export function InvoiceCard({
           {isApproved && isMatched
             ? "Approved match"
             : isMatched
-            ? "Perfect match"
-            : "Needs review"}
+              ? "Perfect match"
+              : "Needs review"}
         </span>
       </span>
       <span className="self-start text-[clamp(18px,2vw,24px)] font-[780] leading-none tracking-normal text-fg tabular-nums whitespace-nowrap">

@@ -2,13 +2,13 @@
   {
     "id": "TXN-991",
     "description": "WIRE IN ACME CORP",
-    "amount": 1250.00,
+    "amount": 1250.0,
     "date": "2026-05-06"
   },
   {
     "id": "TXN-992",
     "description": "STRIPE PAYOUT WT",
-    "amount": 3200.00,
+    "amount": 3200.0,
     "date": "2026-05-06"
   },
   {

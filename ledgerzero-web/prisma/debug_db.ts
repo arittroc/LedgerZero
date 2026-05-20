@@ -10,8 +10,12 @@ async function debug() {
   console.log("🛠️ Database Debug Stats:");
   try {
     const totalInvoices = await prisma.invoice.count();
-    const unpaidInvoices = await prisma.invoice.count({ where: { status: "UNPAID" } });
-    const paidInvoices = await prisma.invoice.count({ where: { status: "PAID" } });
+    const unpaidInvoices = await prisma.invoice.count({
+      where: { status: "UNPAID" },
+    });
+    const paidInvoices = await prisma.invoice.count({
+      where: { status: "PAID" },
+    });
     const totalTxns = await prisma.bankTransaction.count();
     const totalRecs = await prisma.reconciliation.count();
 
@@ -22,10 +26,11 @@ async function debug() {
     console.log(` - Reconciliation Records: ${totalRecs}`);
 
     if (totalInvoices > 0) {
-        const sample = await prisma.invoice.findFirst();
-        console.log(`\nSample Invoice ID: ${sample?.id}, Status: ${sample?.status}`);
+      const sample = await prisma.invoice.findFirst();
+      console.log(
+        `\nSample Invoice ID: ${sample?.id}, Status: ${sample?.status}`,
+      );
     }
-
   } catch (error) {
     console.error("❌ Debug failed:", error);
   } finally {

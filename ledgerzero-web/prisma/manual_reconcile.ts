@@ -9,11 +9,17 @@ const prisma = new PrismaClient({ adapter });
 async function run() {
   console.log("🚀 Running Manual Reconciliation...");
   try {
+    const user = await prisma.user.findFirst();
+    if (!user) {
+      throw new Error("No user found. Please run seed first.");
+    }
+
     await prisma.$transaction([
       prisma.reconciliation.create({
         data: {
           invoiceId: "INV-001",
           transactionId: "TXN-991",
+          userId: user.id,
         },
       }),
       prisma.invoice.update({

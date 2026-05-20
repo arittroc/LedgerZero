@@ -11,6 +11,15 @@ async function main() {
   await prisma.reconciliation.deleteMany({});
   await prisma.invoice.deleteMany({});
   await prisma.bankTransaction.deleteMany({});
+  await prisma.user.deleteMany({});
+
+  console.log("🌱 Creating default user...");
+  const user = await prisma.user.create({
+    data: {
+      email: "demo@ledgerzero.com",
+      passwordHash: "$2b$10$EpjX0Z6VqG.A1j.4w3pS.O239J1m0.M7kKqZ.B0g7E6R3j6u1b6kS", // password
+    },
+  });
 
   console.log("🌱 Seeding Invoices...");
   await prisma.invoice.createMany({
@@ -18,23 +27,26 @@ async function main() {
       {
         id: "INV-001",
         clientName: "Acme Corp",
-        amount: 1250.00,
+        amount: 1250.0,
         status: "UNPAID",
         date: new Date("2026-05-01"),
+        userId: user.id,
       },
       {
         id: "INV-002",
         clientName: "Stark Industries",
-        amount: 450.00,
+        amount: 450.0,
         status: "UNPAID",
         date: new Date("2026-05-02"),
+        userId: user.id,
       },
       {
         id: "INV-003",
         clientName: "Wayne Tech",
-        amount: 3200.00,
+        amount: 3200.0,
         status: "UNPAID",
         date: new Date("2026-05-03"),
+        userId: user.id,
       },
     ],
   });
@@ -45,20 +57,23 @@ async function main() {
       {
         id: "TXN-991",
         description: "WIRE IN ACME CORP",
-        amount: 1250.00,
+        amount: 1250.0,
         date: new Date("2026-05-06"),
+        userId: user.id,
       },
       {
         id: "TXN-992",
         description: "STRIPE PAYOUT WT",
-        amount: 3200.00,
+        amount: 3200.0,
         date: new Date("2026-05-06"),
+        userId: user.id,
       },
       {
         id: "TXN-993",
         description: "ACH DEP FAST NET",
         amount: -89.99,
         date: new Date("2026-05-07"),
+        userId: user.id,
       },
     ],
   });
