@@ -26,7 +26,7 @@ export function CsvUploader({ onUploadSuccess }: CsvUploaderProps) {
         skipEmptyLines: true,
         complete: async (results) => {
           try {
-            const transactions = results.data.map((row: Record<string, string>) => ({
+            const transactions = (results.data as any[]).map((row: any) => ({
               date: row.Date || row.date,
               description: row.Description || row.description,
               amount: row.Amount || row.amount,
