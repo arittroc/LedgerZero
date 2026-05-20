@@ -2,11 +2,6 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { headers } from "next/headers";
 
-interface MatchPair {
-  invoiceId: string;
-  transactionId: string;
-}
-
 export async function POST(request: Request) {
   const userId = (await headers()).get("x-user-id");
 
@@ -15,51 +10,61 @@ export async function POST(request: Request) {
   }
 
   try {
-    const body = await request.json();
-    const matches: MatchPair[] = body.matches;
+    const { transactionId, invoiceId } = await request.json();
 
-    if (!matches || !Array.isArray(matches)) {
+    if (!transactionId || !invoiceId) {
       return NextResponse.json(
-        { error: "Invalid matches array provided" },
+        { error: "transactionId and invoiceId are required" },
         { status: 400 },
       );
     }
 
-    // Verify all invoices and transactions belong to the user
-    // In a real production app, we would add strict checks here
-    // For now, we'll enforce userId in the creation
+    // Use a transaction to ensure atomicity
+    const result = await prisma.$transaction(async (tx) => {
+      // 1. Verify both records exist and belong to the authenticated userId
+      const transaction = await tx.bankTransaction.findUnique({
+        where: { id: transactionId, userId },
+      });
 
-    const results = await prisma.$transaction(
-      matches
-        .map((match) => [
-          // Create Reconciliation record
-          prisma.reconciliation.create({
-            data: {
-              invoiceId: match.invoiceId,
-              transactionId: match.transactionId,
-              userId,
-            },
-          }),
-          // Update Invoice status
-          prisma.invoice.update({
-            where: {
-              id: match.invoiceId,
-              userId, // Ensure tenant isolation
-            },
-            data: { status: "PAID" },
-          }),
-        ])
-        .flat(),
-    );
+      const invoice = await tx.invoice.findUnique({
+        where: { id: invoiceId, userId },
+      });
+
+      if (!transaction || !invoice) {
+        throw new Error("Transaction or Invoice not found or unauthorized");
+      }
+
+      // 2. Create a new Reconciliation record linking the two IDs
+      const reconciliation = await tx.reconciliation.create({
+        data: {
+          transactionId,
+          invoiceId,
+          userId,
+        },
+      });
+
+      // 3. Update the Invoice status to 'PAID'
+      await tx.invoice.update({
+        where: { id: invoiceId },
+        data: { status: "PAID" },
+      });
+
+      // Note: The BankTransaction model in schema.prisma doesn't have a 'status' field.
+      // We'll update it if it existed, but based on the schema it doesn't.
+      // However, we can check for existence of reconciliation record in the UI.
+
+      return reconciliation;
+    });
 
     return NextResponse.json({
       success: true,
-      processedCount: matches.length,
+      reconciliation: result,
     });
   } catch (error) {
-    console.error("Reconciliation failed:", error);
+    console.error("Reconciliation error:", error);
+    const message = error instanceof Error ? error.message : "Reconciliation failed";
     return NextResponse.json(
-      { error: "Reconciliation failed" },
+      { error: message },
       { status: 500 },
     );
   }

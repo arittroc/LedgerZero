@@ -8,6 +8,7 @@ import { MatchBridge, type BridgeRow } from "@/components/MatchBridge";
 import { RightColumn } from "@/components/RightColumn";
 import { CsvUploader } from "@/components/CsvUploader";
 import { CookieConsent } from "@/components/CookieConsent";
+import { ReconciliationModal } from "@/components/ReconciliationModal";
 import {
   type BankFeedItem,
   type Invoice,
@@ -23,6 +24,10 @@ export function LedgerDashboard() {
   const [isApproved, setIsApproved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+
+  // Manual Reconciliation state
+  const [reconcilingTransaction, setReconcilingTransaction] = useState<BankFeedItem | null>(null);
 
   // Feedback state
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
@@ -107,6 +112,7 @@ export function LedgerDashboard() {
     if (reconciliation.matchedPairs.length === 0 || isSubmitting) return;
 
     setIsSubmitting(true);
+    setToastMessage("");
 
     try {
       const response = await fetch("/api/reconcile", {
@@ -244,10 +250,27 @@ export function LedgerDashboard() {
             activeMatchId={selectedMatch}
             isApproved={isApproved}
             onSelectMatch={setSelectedMatch}
+            onOpenReconcile={setReconcilingTransaction}
             reconciliation={reconciliation}
           />
         </div>
       </section>
+
+      {/* Manual Reconciliation Modal */}
+      {reconcilingTransaction && (
+        <ReconciliationModal
+          transaction={reconcilingTransaction}
+          unpaidInvoices={reconciliation.unmatchedInvoices}
+          onClose={() => setReconcilingTransaction(null)}
+          onSuccess={async () => {
+            setReconcilingTransaction(null);
+            setToastMessage("Reconciliation successful!");
+            setShowToast(true);
+            await fetchLedgerData();
+            setTimeout(() => setShowToast(false), 3000);
+          }}
+        />
+      )}
 
       {/* Floating Feedback Button */}
       <button
@@ -344,7 +367,7 @@ export function LedgerDashboard() {
         aria-live="polite"
       >
         <CheckCircle2 className="size-[15px] text-success" />
-        {reconciliation.matchedPairs.length} matches approved.
+        {toastMessage || `${reconciliation.matchedPairs.length} matches approved.`}
       </div>
 
       <CookieConsent />

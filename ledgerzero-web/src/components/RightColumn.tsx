@@ -6,6 +6,7 @@ interface RightColumnProps {
   activeMatchId: string | null;
   isApproved: boolean;
   onSelectMatch: (id: string | null) => void;
+  onOpenReconcile: (transaction: BankFeedItem) => void;
   reconciliation: ReconciliationResult;
 }
 
@@ -14,6 +15,7 @@ export function RightColumn({
   activeMatchId,
   isApproved,
   onSelectMatch,
+  onOpenReconcile,
   reconciliation,
 }: RightColumnProps) {
   return (
@@ -45,6 +47,7 @@ export function RightColumn({
               isMatched={isMatched}
               isApproved={isApproved}
               onSelect={() => match && onSelectMatch(match.id)}
+              onOpenReconcile={() => onOpenReconcile(item)}
             />
           );
         })}
