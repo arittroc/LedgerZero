@@ -1,16 +1,20 @@
-import { CheckCircle2, Wallet } from "lucide-react";
+import { CheckCircle2, Wallet, LogOut, User as UserIcon } from "lucide-react";
 import { formatCurrency } from "@/utils/format";
 
 interface DashboardHeaderProps {
   totalUnreconciled: number;
   onApprove: () => void;
   isApproved: boolean;
+  onLogout: () => void;
+  isAuthenticated: boolean;
 }
 
 export function DashboardHeader({
   totalUnreconciled,
   onApprove,
   isApproved,
+  onLogout,
+  isAuthenticated,
 }: DashboardHeaderProps) {
   return (
     <nav
@@ -24,11 +28,24 @@ export function DashboardHeader({
         LedgerZero
       </div>
 
-      <div className="flex min-h-[42px] items-center justify-center rounded-full border border-white/58 bg-white/52 px-[18px] text-[14px] font-[650] text-muted shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.72)] backdrop-blur-[18px] whitespace-nowrap">
-        Total Unreconciled:{" "}
-        <strong className="ml-[6px] font-[760] text-fg tabular-nums">
-          {formatCurrency(totalUnreconciled)}
-        </strong>
+      <div className="flex gap-4">
+        <div className="flex min-h-[42px] items-center justify-center rounded-full border border-white/58 bg-white/52 px-[18px] text-[14px] font-[650] text-muted shadow-[inset_0_1px_0_oklch(100%_0_0_/_0.72)] backdrop-blur-[18px] whitespace-nowrap">
+          Total Unreconciled:{" "}
+          <strong className="ml-[6px] font-[760] text-fg tabular-nums">
+            {formatCurrency(totalUnreconciled)}
+          </strong>
+        </div>
+
+        {isAuthenticated && (
+          <button
+            onClick={onLogout}
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-all"
+            title="Log Out"
+          >
+            <LogOut className="size-4" />
+            <span>Log Out</span>
+          </button>
+        )}
       </div>
 
       <button

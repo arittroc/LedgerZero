@@ -18,6 +18,7 @@ export function LedgerDashboard() {
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [bankFeed, setBankFeed] = useState<BankFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedMatch, setSelectedMatch] = useState<string | null>(null);
   const [isApproved, setIsApproved] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -32,16 +33,34 @@ export function LedgerDashboard() {
   const fetchLedgerData = useCallback(async () => {
     try {
       const response = await fetch("/api/ledger");
+      if (response.status === 401) {
+        setIsAuthenticated(false);
+        setInvoices([]);
+        setBankFeed([]);
+        return;
+      }
       if (!response.ok) throw new Error("Failed to fetch ledger data");
       const data = await response.json();
       setInvoices(data.invoices);
       setBankFeed(data.transactions);
+      setIsAuthenticated(true);
     } catch (error) {
       console.error("Error fetching ledger:", error);
     } finally {
       setIsLoading(false);
     }
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+      setIsAuthenticated(false);
+      setInvoices([]);
+      setBankFeed([]);
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
 
   useEffect(() => {
     fetchLedgerData();
@@ -159,12 +178,40 @@ export function LedgerDashboard() {
         totalUnreconciled={totalUnreconciled}
         onApprove={handleApproveAll}
         isApproved={isApproved || isSubmitting}
+        onLogout={handleLogout}
+        isAuthenticated={isAuthenticated}
       />
 
       <h1 className="sr-only">LedgerZero invoice reconciliation dashboard</h1>
 
+      {!isAuthenticated && (
+        <div className="mx-auto mt-12 max-w-[1240px] rounded-3xl border border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
+          <h2 className="mb-4 text-2xl font-semibold text-white">
+            Ready to Reconcile?
+          </h2>
+          <p className="mb-8 text-gray-400">
+            Log in or create an account to upload your bank transactions and
+            start matching invoices.
+          </p>
+          <div className="flex justify-center gap-4">
+            <a
+              href="/api/auth/login"
+              className="rounded-2xl bg-white px-8 py-4 font-semibold text-black hover:bg-gray-200 transition-colors"
+            >
+              Log In
+            </a>
+            <a
+              href="/api/auth/signup"
+              className="rounded-2xl border border-white/20 bg-white/5 px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors"
+            >
+              Sign Up
+            </a>
+          </div>
+        </div>
+      )}
+
       <section
-        className="relative mx-auto mt-[54px] grid max-w-[1240px] grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] items-start gap-[18px]"
+        className={`relative mx-auto mt-[54px] grid max-w-[1240px] grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] items-start gap-[18px] transition-opacity duration-500 ${isAuthenticated ? "opacity-100" : "opacity-30 pointer-events-none"}`}
         aria-label="Invoice reconciliation workspace"
       >
         <LeftColumn
@@ -182,7 +229,9 @@ export function LedgerDashboard() {
         />
 
         <div className="flex flex-col">
-          <CsvUploader onUploadSuccess={fetchLedgerData} />
+          {isAuthenticated && (
+            <CsvUploader onUploadSuccess={fetchLedgerData} />
+          )}
           <RightColumn
             bankFeed={bankFeed}
             activeMatchId={selectedMatch}

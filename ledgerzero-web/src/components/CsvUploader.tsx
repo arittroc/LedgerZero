@@ -46,6 +46,7 @@ export function CsvUploader({ onUploadSuccess }: CsvUploaderProps) {
             const response = await fetch("/api/transactions/upload", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              credentials: "include",
               body: JSON.stringify(validTransactions),
             });
 
