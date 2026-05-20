@@ -1,3 +1,4 @@
+import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import pg from "pg";
@@ -17,7 +18,7 @@ async function main() {
   const user = await prisma.user.create({
     data: {
       email: "demo@ledgerzero.com",
-      passwordHash: "$2b$10$EpjX0Z6VqG.A1j.4w3pS.O239J1m0.M7kKqZ.B0g7E6R3j6u1b6kS", // password
+      passwordHash: "$2b$10$ukCOiHiSuvwyWk7.dq/VqubM6zPZZKNm7zCCUysCPeRZdRco9LHDa", // password
     },
   });
 

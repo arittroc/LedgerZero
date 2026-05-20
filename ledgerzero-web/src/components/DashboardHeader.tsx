@@ -1,5 +1,7 @@
-import { CheckCircle2, Wallet, LogOut, User as UserIcon } from "lucide-react";
+import { CheckCircle2, Wallet, LogOut, LogIn } from "lucide-react";
 import { formatCurrency } from "@/utils/format";
+import Link from "next/link";
+
 
 interface DashboardHeaderProps {
   totalUnreconciled: number;
@@ -36,7 +38,7 @@ export function DashboardHeader({
           </strong>
         </div>
 
-        {isAuthenticated && (
+        {isAuthenticated ? (
           <button
             onClick={onLogout}
             className="flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-sm font-medium text-gray-400 hover:bg-white/10 hover:text-white transition-all"
@@ -45,6 +47,15 @@ export function DashboardHeader({
             <LogOut className="size-4" />
             <span>Log Out</span>
           </button>
+        ) : (
+          <Link
+            href="/login"
+            id="header-login-link"
+            className="flex min-h-[44px] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 text-sm font-medium text-muted hover:bg-white/10 hover:text-fg transition-all"
+          >
+            <LogIn className="size-4" />
+            <span>Log In</span>
+          </Link>
         )}
       </div>
 

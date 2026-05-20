@@ -208,13 +208,13 @@ export function LedgerDashboard() {
           </p>
           <div className="flex justify-center gap-4">
             <a
-              href="/api/auth/login"
+              href="/login"
               className="rounded-2xl bg-white px-8 py-4 font-semibold text-black hover:bg-gray-200 transition-colors"
             >
               Log In
             </a>
             <a
-              href="/api/auth/signup"
+              href="/signup"
               className="rounded-2xl border border-white/20 bg-white/5 px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors"
             >
               Sign Up
