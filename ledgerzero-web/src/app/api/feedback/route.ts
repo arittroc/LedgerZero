@@ -22,6 +22,7 @@ export async function POST(request: Request) {
     // RLS ensures the record is linked to the correct user
     const { data, error } = await supabase
       .from('feedbacks')
+      // @ts-ignore
       .insert({
         user_id: user.id,
         message,
