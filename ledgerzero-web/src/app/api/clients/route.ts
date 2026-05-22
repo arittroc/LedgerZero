@@ -44,6 +44,7 @@ export async function POST(request: Request) {
 
     const { data, error } = await supabase
       .from('clients')
+      // @ts-ignore
       .insert({ business_id, name, email })
       .select()
       .single();
