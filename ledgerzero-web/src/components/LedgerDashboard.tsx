@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
-import { CheckCircle2, Loader2, MessageSquare, X } from "lucide-react";
+import { CheckCircle2, Loader2, MessageSquare, X, ArrowRight } from "lucide-react";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { LeftColumn } from "@/components/LeftColumn";
 import { MatchBridge, type BridgeRow } from "@/components/MatchBridge";
@@ -9,13 +9,25 @@ import { RightColumn } from "@/components/RightColumn";
 import { CsvUploader } from "@/components/CsvUploader";
 import { CookieConsent } from "@/components/CookieConsent";
 import { ReconciliationModal } from "@/components/ReconciliationModal";
+import Link from "next/link";
 import {
   type BankFeedItem,
   type Invoice,
   reconcileLedger,
 } from "@/utils/reconcileLedger";
 
+import { createClient } from "@/utils/supabase/client";
+import { useRouter } from "next/navigation";
+import { authService } from "@/lib/supabase-auth";
+
+import { RevenueAnalytics } from "@/components/RevenueAnalytics";
+import { SmartScanDropzone } from "@/components/SmartScanDropzone";
+import { SmartInvoiceModal } from "@/components/SmartInvoiceModal";
+import { AutoMatchModal } from "@/components/AutoMatchModal";
+
 export function LedgerDashboard() {
+  const router = useRouter();
+  const supabase = createClient();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [bankFeed, setBankFeed] = useState<BankFeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -25,6 +37,15 @@ export function LedgerDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
+
+  // Smart Scan state
+  const [extractedInvoice, setExtractedInvoice] = useState<any>(null);
+  const [showSmartModal, setShowSmartModal] = useState(false);
+
+  // Auto-Match state
+  const [suggestedMatches, setSuggestedMatches] = useState<any[]>([]);
+  const [showAutoMatchModal, setShowAutoMatchModal] = useState(false);
+  const [isRunningAutoMatch, setIsRunningAutoMatch] = useState(false);
 
   // Manual Reconciliation state
   const [reconcilingTransaction, setReconcilingTransaction] =
@@ -36,17 +57,41 @@ export function LedgerDashboard() {
   const [feedbackType, setFeedbackType] = useState("BUG");
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
+  const handleExtractionComplete = (data: any) => {
+    setExtractedInvoice(data);
+    setShowSmartModal(true);
+  };
+
+  const handleRunAutoMatch = async () => {
+    setIsRunningAutoMatch(true);
+    try {
+      const response = await fetch("/api/reconcile/auto", {
+        credentials: "include",
+      });
+      if (!response.ok) throw new Error("Auto-match failed");
+      const data = await response.json();
+      setSuggestedMatches(data.suggestions);
+      setShowAutoMatchModal(true);
+    } catch (error) {
+      console.error("Auto-match error:", error);
+    } finally {
+      setIsRunningAutoMatch(false);
+    }
+  };
+
   const fetchLedgerData = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      setIsAuthenticated(false);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch("/api/ledger", {
         credentials: "include",
       });
-      if (response.status === 401) {
-        setIsAuthenticated(false);
-        setInvoices([]);
-        setBankFeed([]);
-        return;
-      }
       if (!response.ok) throw new Error("Failed to fetch ledger data");
       const data = await response.json();
       setInvoices(data.invoices);
@@ -57,25 +102,56 @@ export function LedgerDashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [supabase.auth]);
+
+  useEffect(() => {
+    fetchLedgerData();
+
+    // Listen for auth changes
+    const { data: { subscription: authListener } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN') fetchLedgerData();
+      if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setInvoices([]);
+        setBankFeed([]);
+      }
+    });
+
+    // Real-time Subscriptions
+    const invoicesChannel = supabase
+      .channel('realtime:invoices')
+      .on('postgres_changes', { event: '*', table: 'invoices', schema: 'public' }, () => {
+        fetchLedgerData();
+      })
+      .subscribe();
+
+    const transactionsChannel = supabase
+      .channel('realtime:transactions')
+      .on('postgres_changes', { event: '*', table: 'bank_transactions', schema: 'public' }, () => {
+        fetchLedgerData();
+      })
+      .subscribe();
+
+    return () => {
+      authListener.unsubscribe();
+      supabase.removeChannel(invoicesChannel);
+      supabase.removeChannel(transactionsChannel);
+    };
+  }, [fetchLedgerData, supabase]);
 
   const handleLogout = async () => {
     try {
-      await fetch("/api/auth/logout", {
-        method: "POST",
-        credentials: "include",
-      });
+      const { error } = await authService.signOut();
+      if (error) throw error;
+
       setIsAuthenticated(false);
       setInvoices([]);
       setBankFeed([]);
+      router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
     }
   };
-
-  useEffect(() => {
-    fetchLedgerData();
-  }, [fetchLedgerData]);
 
   const reconciliation = useMemo(
     () => reconcileLedger(invoices, bankFeed),
@@ -180,8 +256,30 @@ export function LedgerDashboard() {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-bg">
-        <Loader2 className="size-8 animate-spin text-accent" />
+      <div className="app-shell min-h-screen p-8">
+        <div className="mx-auto max-w-[1240px] space-y-12">
+          {/* Header Skeleton */}
+          <div className="h-16 w-full rounded-[28px] bg-white/5 animate-pulse border border-white/5" />
+          
+          {/* Grid Skeleton */}
+          <div className="grid grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] gap-[18px]">
+            <div className="space-y-4">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-28 w-full rounded-[22px] bg-white/[0.03] animate-pulse border border-white/5" />
+              ))}
+            </div>
+            <div className="flex flex-col items-center py-8 space-y-12">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-12 w-0.5 bg-white/5 animate-pulse" />
+              ))}
+            </div>
+            <div className="space-y-4">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="h-28 w-full rounded-[22px] bg-white/[0.03] animate-pulse border border-white/5" />
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -199,42 +297,49 @@ export function LedgerDashboard() {
       <h1 className="sr-only">LedgerZero invoice reconciliation dashboard</h1>
 
       {!isAuthenticated && (
-        <div className="mx-auto mt-12 max-w-[1240px] rounded-3xl border border-white/10 bg-white/5 p-12 text-center backdrop-blur-xl">
-          <h2 className="mb-4 text-2xl font-semibold text-white">
-            Ready to Reconcile?
-          </h2>
-          <p className="mb-8 text-gray-400">
-            Log in or create an account to upload your bank transactions and
-            start matching invoices.
-          </p>
-          <div className="flex justify-center gap-4">
-            <a
-              href="/login"
-              className="rounded-2xl bg-white px-8 py-4 font-semibold text-black hover:bg-gray-200 transition-colors"
-            >
-              Log In
-            </a>
-            <a
-              href="/signup"
-              className="rounded-2xl border border-white/20 bg-white/5 px-8 py-4 font-semibold text-white hover:bg-white/10 transition-colors"
-            >
-              Sign Up
-            </a>
+        <div className="relative mx-auto mt-12 max-w-[1240px] overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] p-16 text-center backdrop-blur-2xl shadow-2xl">
+          {/* Liquid glass glows */}
+          <div className="absolute -top-40 -left-40 size-96 rounded-full bg-accent/10 blur-[120px]" />
+          <div className="absolute -bottom-40 -right-40 size-96 rounded-full bg-blue-600/5 blur-[120px]" />
+          
+          <div className="relative z-10">
+            <h2 className="mb-4 text-4xl font-bold text-white tracking-tight">
+              Ready to Reconcile?
+            </h2>
+            <p className="mx-auto mb-10 max-w-lg text-gray-400 text-lg leading-relaxed">
+              Experience the future of zero-effort accounting. Log in to securely connect your bank data and automate your reconciliation workflow.
+            </p>
+            <div className="flex justify-center">
+              <Link
+                href="/login"
+                className="group relative flex h-16 items-center justify-center overflow-hidden rounded-2xl bg-white px-12 font-bold text-black shadow-2xl transition-all duration-300 hover:scale-[1.02] hover:bg-gray-100 active:scale-[0.98]"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                <span className="relative flex items-center gap-2">
+                  Get Started <ArrowRight className="size-5" />
+                </span>
+              </Link>
+            </div>
           </div>
         </div>
       )}
+
+      {isAuthenticated && <RevenueAnalytics invoices={invoices} />}
 
       <section
         className={`relative mx-auto mt-[54px] grid max-w-[1240px] grid-cols-[minmax(0,1fr)_70px_minmax(0,1fr)] items-start gap-[18px] transition-opacity duration-500 ${isAuthenticated ? "opacity-100" : "opacity-30 pointer-events-none"}`}
         aria-label="Invoice reconciliation workspace"
       >
-        <LeftColumn
-          invoices={invoices}
-          activeMatchId={selectedMatch}
-          isApproved={isApproved}
-          onSelectMatch={setSelectedMatch}
-          reconciliation={reconciliation}
-        />
+        <div className="flex flex-col gap-4">
+          {isAuthenticated && <SmartScanDropzone onExtractionComplete={handleExtractionComplete} />}
+          <LeftColumn
+            invoices={invoices}
+            activeMatchId={selectedMatch}
+            isApproved={isApproved}
+            onSelectMatch={setSelectedMatch}
+            reconciliation={reconciliation}
+          />
+        </div>
 
         <MatchBridge
           rows={bridgeRows}
@@ -242,8 +347,29 @@ export function LedgerDashboard() {
           isApproved={isApproved}
         />
 
-        <div className="flex flex-col">
-          {isAuthenticated && <CsvUploader onUploadSuccess={fetchLedgerData} />}
+        <div className="flex flex-col gap-4">
+          {isAuthenticated && (
+            <div className="flex flex-col gap-4 mb-4">
+              <CsvUploader onUploadSuccess={fetchLedgerData} />
+              <button
+                onClick={handleRunAutoMatch}
+                disabled={isRunningAutoMatch}
+                className="group relative flex h-14 w-full items-center justify-center overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] px-6 font-bold text-white backdrop-blur-xl transition-all duration-300 hover:bg-white/10 hover:border-white/20 active:scale-[0.98] disabled:opacity-50"
+              >
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]" />
+                <span className="relative flex items-center gap-2">
+                  {isRunningAutoMatch ? (
+                    <Loader2 className="size-5 animate-spin" />
+                  ) : (
+                    <>
+                      <Sparkles className="size-5 text-accent" />
+                      Run Auto-Match
+                    </>
+                  )}
+                </span>
+              </button>
+            </div>
+          )}
           <RightColumn
             bankFeed={bankFeed}
             activeMatchId={selectedMatch}
@@ -254,6 +380,35 @@ export function LedgerDashboard() {
           />
         </div>
       </section>
+
+      {/* Auto-Match Modal */}
+      {showAutoMatchModal && (
+        <AutoMatchModal
+          suggestions={suggestedMatches}
+          onClose={() => setShowAutoMatchModal(false)}
+          onSuccess={() => {
+            setShowAutoMatchModal(false);
+            setToastMessage(`${suggestedMatches.length} matches approved via Auto-Match!`);
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+          }}
+        />
+      )}
+
+      {/* Smart Scan Review Modal */}
+      {extractedInvoice && (
+        <SmartInvoiceModal
+          isOpen={showSmartModal}
+          data={extractedInvoice}
+          onClose={() => setShowSmartModal(false)}
+          onSuccess={() => {
+            setShowSmartModal(false);
+            setToastMessage("Invoice scanned & saved successfully!");
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+          }}
+        />
+      )}
 
       {/* Manual Reconciliation Modal */}
       {reconcilingTransaction && (

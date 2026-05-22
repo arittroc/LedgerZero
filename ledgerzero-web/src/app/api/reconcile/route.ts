@@ -1,69 +1,75 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { headers } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: Request) {
-  const userId = (await headers()).get("x-user-id");
-
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const supabase = await createClient();
 
   try {
-    const { transactionId, invoiceId } = await request.json();
+    const body = await request.json();
+    const { transactionId, invoiceId, matches } = body;
 
-    if (!transactionId || !invoiceId) {
+    // 1. Determine the list of matches to process
+    const matchesToProcess = matches || (transactionId && invoiceId ? [{ transactionId, invoiceId }] : []);
+
+    if (matchesToProcess.length === 0) {
       return NextResponse.json(
-        { error: "transactionId and invoiceId are required" },
+        { error: "No matches provided" },
         { status: 400 },
       );
     }
 
-    // Use a transaction to ensure atomicity
-    const result = await prisma.$transaction(async (tx) => {
-      // 1. Verify both records exist and belong to the authenticated userId
-      const transaction = await tx.bankTransaction.findUnique({
-        where: { id: transactionId, userId },
-      });
+    // 2. Get the user's business (default to first business found)
+    const { data: businesses, error: bizError } = await supabase
+      .from('businesses')
+      .select('id')
+      .limit(1);
 
-      const invoice = await tx.invoice.findUnique({
-        where: { id: invoiceId, userId },
-      });
+    if (bizError || !businesses || businesses.length === 0) {
+      return NextResponse.json({ error: "No business found" }, { status: 400 });
+    }
+    const businessId = businesses[0].id;
 
-      if (!transaction || !invoice) {
-        throw new Error("Transaction or Invoice not found or unauthorized");
+    // 3. Process matches
+    // In a production environment, this logic should be moved to a Postgres RPC
+    // to ensure atomicity across multiple matches.
+    const results = [];
+    for (const match of matchesToProcess) {
+      const { transactionId, invoiceId } = match;
+
+      // Create reconciliation link
+      // RLS ensures the user owns both the business and the related records
+      const { data: rec, error: recError } = await supabase
+        .from('reconciliations')
+        .insert({
+          transaction_id: transactionId,
+          invoice_id: invoiceId,
+          business_id: businessId
+        })
+        .select()
+        .single();
+
+      if (recError) {
+        console.error(`Match failed for invoice ${invoiceId}:`, recError);
+        continue;
       }
 
-      // 2. Create a new Reconciliation record linking the two IDs
-      const reconciliation = await tx.reconciliation.create({
-        data: {
-          transactionId,
-          invoiceId,
-          userId,
-        },
-      });
+      // Update invoice status to 'paid'
+      await supabase
+        .from('invoices')
+        .update({ status: 'paid' })
+        .eq('id', invoiceId)
+        .eq('business_id', businessId);
 
-      // 3. Update the Invoice status to 'PAID'
-      await tx.invoice.update({
-        where: { id: invoiceId },
-        data: { status: "PAID" },
-      });
-
-      // Note: The BankTransaction model in schema.prisma doesn't have a 'status' field.
-      // We'll update it if it existed, but based on the schema it doesn't.
-      // However, we can check for existence of reconciliation record in the UI.
-
-      return reconciliation;
-    });
+      results.push(rec);
+    }
 
     return NextResponse.json({
       success: true,
-      reconciliation: result,
+      count: results.length,
+      reconciliations: results,
     });
   } catch (error) {
     console.error("Reconciliation error:", error);
-    const message =
-      error instanceof Error ? error.message : "Reconciliation failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
