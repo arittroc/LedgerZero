@@ -12,11 +12,11 @@ export async function GET(request: Request) {
       .from('businesses')
       .select('id')
       .limit(1);
-    
+
     if (bizError || !businesses || businesses.length === 0) {
       return NextResponse.json({ data: [] });
     }
-    business_id = businesses[0].id;
+    business_id = (businesses as any)[0].id;
   }
 
   const { data, error } = await supabase
@@ -34,7 +34,7 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   const supabase = await createClient();
-  
+
   try {
     const { business_id, name, email } = await request.json();
 
