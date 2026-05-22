@@ -145,7 +145,7 @@ export default function LoginPage() {
                       <Loader2 className="size-5 animate-spin" />
                     ) : (
                       <>
-                        <Chrome className="size-5" />
+                        <Globe className="size-5" />
                         <span>Continue with Google</span>
                       </>
                     )}
