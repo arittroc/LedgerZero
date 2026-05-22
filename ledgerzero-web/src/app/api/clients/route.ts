@@ -22,7 +22,7 @@ export async function GET(request: Request) {
   const { data, error } = await supabase
     .from('clients')
     .select('*')
-    .eq('business_id', business_id)
+    .eq('business_id', business_id as string)
     .order('name');
 
   if (error) {
