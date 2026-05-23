@@ -3,8 +3,8 @@ import crypto from "crypto";
 import { createClient } from "@supabase/supabase-js";
 
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://dummy.supabase.co',
+  process.env.SUPABASE_SERVICE_ROLE_KEY || 'dummy'
 );
 
 export async function POST(request: Request) {
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
       if (invoiceId) {
         console.log(`✅ Marking invoice ${invoiceId} as PAID via Razorpay`);
-        
+
         const { error } = await supabaseAdmin
           .from("invoices")
           .update({ status: "paid" })
