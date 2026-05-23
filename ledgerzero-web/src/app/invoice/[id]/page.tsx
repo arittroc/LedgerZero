@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { notFound } from "next/navigation";
 import { supabaseAdmin } from "@/utils/supabase/admin";
 import { formatCurrency, formatDate } from "@/utils/format";
