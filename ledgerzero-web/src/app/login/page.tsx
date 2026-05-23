@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Wallet, Loader2, Mail, Chrome, ArrowRight, Sparkles } from "lucide-react";
+import { Wallet, Loader2, Mail, Globe, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { authService } from "@/lib/supabase-auth";
 
@@ -145,7 +145,7 @@ export default function LoginPage() {
                       <Loader2 className="size-5 animate-spin" />
                     ) : (
                       <>
-                        <Chrome className="size-5" />
+                        <Globe className="size-5" />
                         <span>Continue with Google</span>
                       </>
                     )}
