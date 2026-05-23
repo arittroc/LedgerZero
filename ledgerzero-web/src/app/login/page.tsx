@@ -53,11 +53,11 @@ export default function LoginPage() {
         {/* Branding */}
         <div className="mb-12 flex flex-col items-center text-center">
           <div className="relative mb-6">
-             <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-150" />
-             <div className="relative grid size-16 place-items-center rounded-[22px] bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <Wallet className="size-7 text-white" />
-             </div>
+            <div className="absolute inset-0 bg-white/20 blur-2xl rounded-full scale-150" />
+            <div className="relative grid size-16 place-items-center rounded-[22px] bg-white/10 border border-white/20 backdrop-blur-xl shadow-2xl overflow-hidden group">
+              <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <Wallet className="size-7 text-white" />
+            </div>
           </div>
           <h1 className="text-3xl font-bold text-white tracking-tight mb-2 flex items-center gap-2">
             LedgerZero
@@ -71,7 +71,7 @@ export default function LoginPage() {
         <div className="relative group">
           {/* Subtle outer glow */}
           <div className="absolute -inset-0.5 bg-gradient-to-b from-white/20 to-transparent rounded-[32px] blur-sm opacity-50 group-hover:opacity-100 transition duration-1000" />
-          
+
           <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.03] backdrop-blur-[32px] shadow-[0_24px_80px_rgba(0,0,0,0.4)]">
             <div className="p-10">
               {isSent ? (
@@ -83,7 +83,7 @@ export default function LoginPage() {
                   <p className="text-gray-400 text-sm leading-relaxed mb-8">
                     We've sent a magic link to <span className="text-white font-medium">{email}</span>. Click it to sign in instantly.
                   </p>
-                  <button 
+                  <button
                     onClick={() => setIsSent(false)}
                     className="text-sm font-medium text-gray-500 hover:text-white transition-colors"
                   >
@@ -104,7 +104,7 @@ export default function LoginPage() {
                           className="w-full h-14 rounded-2xl border border-white/10 bg-white/5 px-5 text-white placeholder-gray-500 transition-all duration-300 focus:border-white/30 focus:outline-none focus:bg-white/10 peer"
                         />
                         <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 peer-focus:opacity-100 transition-opacity duration-300">
-                           <ArrowRight className="size-5 text-white/50" />
+                          <ArrowRight className="size-5 text-white/50" />
                         </div>
                       </div>
                     </div>
@@ -145,7 +145,7 @@ export default function LoginPage() {
                       <Loader2 className="size-5 animate-spin" />
                     ) : (
                       <>
-                        <Globe className="size-5" />
+                        <Chrome className="size-5" />
                         <span>Continue with Google</span>
                       </>
                     )}
