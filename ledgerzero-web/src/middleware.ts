@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { verifyToken } from "@/lib/auth";
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
 
   if (!token) {
@@ -15,8 +15,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.json({ error: "Invalid session" }, { status: 401 });
   }
 
-  // Pass userId to the route via headers or just rely on the token being valid
-  // The route handler should extract userId from the cookie or a custom header
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-user-id", payload.userId);
 
@@ -28,7 +26,7 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  routes: [
+  matcher: [
     "/api/ledger/:path*",
     "/api/reconcile/:path*",
     "/api/transactions/:path*",
