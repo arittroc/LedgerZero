@@ -107,6 +107,9 @@ export default function LoginPage() {
                           <ArrowRight className="size-5 text-white/50" />
                         </div>
                       </div>
+                      <p className="text-xs text-gray-500 leading-relaxed">
+                        No password needed. If you don&apos;t have an account, we&apos;ll create one for you automatically.
+                      </p>
                     </div>
 
                     {error && (
@@ -122,7 +125,7 @@ export default function LoginPage() {
                     >
                       <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:animate-[shimmer_1.5s_infinite] transition-none" />
                       <span className="relative flex items-center justify-center gap-2 font-bold text-black text-base">
-                        {isLoading ? <Loader2 className="size-5 animate-spin" /> : "Continue with Email"}
+                        {isLoading ? <Loader2 className="size-5 animate-spin" /> : "Sign In / Sign Up with Email"}
                       </span>
                     </button>
                   </form>

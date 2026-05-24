@@ -1,19 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --bg: oklch(99% 0.002 240);
-  --surface: oklch(100% 0 0);
-  --fg: oklch(18% 0.012 250);
-  --muted: oklch(54% 0.012 250);
-  --border: oklch(92% 0.005 250);
-  --accent: oklch(58% 0.18 255);
-  --glass: oklch(100% 0 0 / 0.44);
-  --glass-border: oklch(100% 0 0 / 0.52);
-  --success: oklch(64% 0.145 150);
-  --success-soft: oklch(97% 0.03 155 / 0.68);
-  --success-border: oklch(84% 0.08 150 / 0.78);
-  --danger: oklch(58% 0.19 25);
-  --shadow-custom: 0 28px 78px oklch(18% 0.012 250 / 0.12);
+  /* ── Dark theme ── */
+  --bg: oklch(8% 0.004 250);
+  --surface: oklch(12% 0.006 250);
+  --fg: oklch(96% 0.004 240);
+  --muted: oklch(60% 0.008 250);
+  --border: oklch(22% 0.008 250);
+  --accent: oklch(62% 0.20 255);
+  /* Glass is now a luminous white veil over dark — keeps translucency alive */
+  --glass: oklch(100% 0 0 / 0.06);
+  --glass-border: oklch(100% 0 0 / 0.12);
+  --success: oklch(68% 0.155 150);
+  --success-soft: oklch(20% 0.06 155 / 0.70);
+  --success-border: oklch(40% 0.10 150 / 0.70);
+  --danger: oklch(62% 0.20 25);
+  --shadow-custom: 0 28px 78px oklch(0% 0 0 / 0.55);
 
   --font-display:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text",
@@ -64,20 +66,20 @@
     background:
       radial-gradient(
         circle at 11% 8%,
-        oklch(93% 0.034 250 / 0.78),
+        oklch(30% 0.08 265 / 0.55),
         transparent 32rem
       ),
       radial-gradient(
         circle at 86% 18%,
-        oklch(94% 0.048 164 / 0.74),
+        oklch(25% 0.10 295 / 0.45),
         transparent 30rem
       ),
       radial-gradient(
         circle at 66% 92%,
-        oklch(96% 0.035 210 / 0.72),
+        oklch(22% 0.07 240 / 0.40),
         transparent 34rem
       ),
-      linear-gradient(135deg, oklch(99% 0.002 240), oklch(97% 0.009 232));
+      linear-gradient(135deg, oklch(8% 0.004 250), oklch(6% 0.003 260));
   }
 
   button {
@@ -101,13 +103,13 @@
     z-index: -1;
     pointer-events: none;
     background-image:
-      linear-gradient(oklch(100% 0 0 / 0.3) 1px, transparent 1px),
-      linear-gradient(90deg, oklch(100% 0 0 / 0.3) 1px, transparent 1px);
+      linear-gradient(oklch(100% 0 0 / 0.05) 1px, transparent 1px),
+      linear-gradient(90deg, oklch(100% 0 0 / 0.05) 1px, transparent 1px);
     background-size: 52px 52px;
     mask-image: linear-gradient(
       to bottom,
-      oklch(0 0 0 / 0.56),
-      transparent 80%
+      oklch(0 0 0 / 0.80),
+      transparent 85%
     );
   }
 
@@ -116,11 +118,11 @@
   }
 
   .liquid-column {
-    @apply border border-white/44 bg-white/36 backdrop-blur-[28px] shadow-custom;
+    @apply border border-white/10 bg-white/[0.05] backdrop-blur-[28px] shadow-custom;
   }
 
   .record-card-base {
-    @apply border border-white/50 bg-glass backdrop-blur-[22px] shadow-[0_16px_36px_oklch(18%_0.012_250_/_0.06),inset_0_1px_0_oklch(100%_0_0_/_0.66)] transition-all duration-150;
+    @apply border border-white/10 bg-glass backdrop-blur-[22px] shadow-[0_16px_36px_oklch(0%_0_0_/_0.40),inset_0_1px_0_oklch(100%_0_0_/_0.10)] transition-all duration-150;
   }
 
   @keyframes approvePulse {
