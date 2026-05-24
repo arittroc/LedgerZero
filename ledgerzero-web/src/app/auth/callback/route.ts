@@ -6,40 +6,46 @@ export async function GET(request: Request) {
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
 
-  if (code) {
-    const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
-    
-    if (!error) {
-      // Logic to check if user needs onboarding
-      const { data: { user } } = await supabase.auth.getUser()
-      
-      if (user) {
-        const { data: businesses, error: bizError } = await supabase
-          .from('businesses')
-          .select('id')
-          .eq('owner_id', user.id)
-          .limit(1)
+  // Determine the correct base URL (handles Vercel's x-forwarded-host)
+  const forwardedHost = request.headers.get('x-forwarded-host')
+  const isLocalEnv = process.env.NODE_ENV === 'development'
+  const baseUrl =
+    isLocalEnv || !forwardedHost ? origin : `https://${forwardedHost}`
 
-        if (!bizError && (!businesses || businesses.length === 0)) {
-          // New user detected, redirect to onboarding
-          return NextResponse.redirect(`${origin}/onboarding`)
-        }
-      }
+  if (!code) {
+    console.error('[auth/callback] No code param received — possible CSRF or direct navigation.')
+    return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`)
+  }
 
-      const forwardedHost = request.headers.get('x-forwarded-host')
-      const isLocalEnv = process.env.NODE_ENV === 'development'
-      
-      if (isLocalEnv) {
-        return NextResponse.redirect(`${origin}${next}`)
-      } else if (forwardedHost) {
-        return NextResponse.redirect(`https://${forwardedHost}${next}`)
-      } else {
-        return NextResponse.redirect(`${origin}${next}`)
-      }
+  const supabase = await createClient()
+  const { error } = await supabase.auth.exchangeCodeForSession(code)
+
+  if (error) {
+    console.error('[auth/callback] PKCE exchange failed:', error.message, error)
+    return NextResponse.redirect(`${baseUrl}/auth/auth-code-error`)
+  }
+
+  // Exchange succeeded — check if new user needs onboarding
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user) {
+    const { data: businesses, error: bizError } = await supabase
+      .from('businesses')
+      .select('id')
+      .eq('owner_id', user.id)
+      .limit(1)
+
+    if (bizError) {
+      console.warn('[auth/callback] Could not query businesses:', bizError.message)
+    }
+
+    if (!bizError && (!businesses || businesses.length === 0)) {
+      // New user — send to onboarding
+      return NextResponse.redirect(`${baseUrl}/onboarding`)
     }
   }
 
-  // return the user to an error page with instructions
-  return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+  return NextResponse.redirect(`${baseUrl}${next}`)
 }
