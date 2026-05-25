@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Loader2, Calendar, User, DollarSign } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createInvoice } from "@/app/actions/invoice";
 
-export default function NewInvoiceSlideOut() {
+// 1. The inner component that uses useSearchParams
+function SlideOutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isOpen = searchParams.get("action") === "new-invoice";
@@ -15,7 +16,6 @@ export default function NewInvoiceSlideOut() {
   const [error, setError] = useState<string | null>(null);
 
   const handleClose = () => {
-    // Closes the panel without a full page reload
     router.push("/dashboard", { scroll: false });
   };
 
@@ -135,5 +135,14 @@ export default function NewInvoiceSlideOut() {
         </>
       )}
     </AnimatePresence>
+  );
+}
+
+// 2. The exported wrapper that provides the Suspense boundary
+export default function NewInvoiceSlideOut() {
+  return (
+    <Suspense fallback={null}>
+      <SlideOutContent />
+    </Suspense>
   );
 }
