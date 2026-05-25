@@ -1,12 +1,12 @@
 import { redirect } from "next/navigation";
 import { LogOut, FileText, Activity, Wallet, ArrowRight, Plus } from "lucide-react";
-import { createClient } from "@/utils/supabase/server"; 
-import NewInvoiceSlideOut from "@/components/NewInvoiceSlideOut"; 
+import { createClient } from "@/utils/supabase/server";
+import NewInvoiceSlideOut from "@/components/NewInvoiceSlideOut";
 import Link from "next/link";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  
+
   // 1. Verify Authentication
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-600/5 blur-[150px] pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-6 py-12 relative z-10">
-        
+
         {/* Top Navigation / Header */}
         <header className="flex items-center justify-between mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="flex items-center gap-3">
@@ -38,7 +38,7 @@ export default async function DashboardPage() {
             </div>
             <h1 className="text-xl font-bold tracking-tight">LedgerZero</h1>
           </div>
-          
+
           <div className="flex items-center gap-6">
             <span className="text-sm text-gray-500 font-medium">{session.user.email}</span>
             <form action="/api/auth/logout" method="POST">
@@ -52,24 +52,30 @@ export default async function DashboardPage() {
 
         {/* Dashboard Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           {/* Main KPI Card */}
           <div className="lg:col-span-3 group relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.02] backdrop-blur-[32px] p-10 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
-             <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-             <p className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-4">Total Unreconciled</p>
-             <div className="flex items-end justify-between">
-               <h2 className="text-6xl font-bold tracking-tighter">
-                 ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-               </h2>
-               <Link
-                 href="/dashboard?action=new-invoice"
-                 scroll={false}
-                 className="h-12 px-6 rounded-full bg-white text-black font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all"
-               >
-                 <Plus className="size-4" />
-                 New Invoice
-               </Link>
-             </div>
+
+            {/* Background glow with pointer-events disabled */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+
+            <p className="text-gray-400 text-sm font-semibold tracking-widest uppercase mb-4 relative z-10">Total Unreconciled</p>
+
+            <div className="flex items-end justify-between relative z-10">
+              <h2 className="text-6xl font-bold tracking-tighter">
+                ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </h2>
+
+              {/* Elevated Link to ensure clickability */}
+              <Link
+                href="/dashboard?action=new-invoice"
+                scroll={false}
+                className="relative z-10 h-12 px-6 rounded-full bg-white text-black font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all"
+              >
+                <Plus className="size-4" />
+                New Invoice
+              </Link>
+            </div>
           </div>
 
           {/* Outstanding Invoices Pane */}
@@ -119,9 +125,9 @@ export default async function DashboardPage() {
               <Activity className="size-5 text-gray-400" />
               <h3 className="text-lg font-semibold">Live Bank Feed</h3>
             </div>
-            
+
             <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
-            
+
             <div className="space-y-4 opacity-50 grayscale">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/5">
@@ -133,7 +139,7 @@ export default async function DashboardPage() {
                 </div>
               ))}
             </div>
-            
+
             <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
               <span className="px-4 py-2 rounded-full bg-black/50 border border-white/10 backdrop-blur-md text-xs font-semibold text-white tracking-widest uppercase">
                 Awaiting Connection
