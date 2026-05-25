@@ -6,7 +6,6 @@ import { X, Loader2, Calendar, User, DollarSign } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createInvoice } from "@/app/actions/invoice";
 
-// 1. The inner component that uses useSearchParams
 function SlideOutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,7 +38,6 @@ function SlideOutContent() {
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -48,7 +46,6 @@ function SlideOutContent() {
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99]"
           />
 
-          {/* Slide-Out Panel */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
@@ -138,7 +135,6 @@ function SlideOutContent() {
   );
 }
 
-// 2. The exported wrapper that provides the Suspense boundary
 export default function NewInvoiceSlideOut() {
   return (
     <Suspense fallback={null}>
