@@ -11,7 +11,7 @@ interface NewInvoiceSlideOutProps {
   onClose: () => void;
 }
 
-export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps) {
+export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);

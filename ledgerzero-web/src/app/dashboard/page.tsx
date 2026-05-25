@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { LogOut, FileText, Activity, Wallet, ArrowRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/server"; 
-import { DashboardClientWrapper } from "@/components/DashboardClientWrapper"; 
+import DashboardClientWrapper from "@/components/DashboardClientWrapper"; 
 
 export default async function DashboardPage() {
   const supabase = await createClient();
