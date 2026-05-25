@@ -1,24 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { createPortal } from "react-dom";
-import { X, Loader2, Calendar, User, DollarSign } from "lucide-react";
-import { createInvoice } from "@/app/actions/invoice";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { X, Loader2, Calendar, User, DollarSign } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { createInvoice } from "@/app/actions/invoice";
 
-interface NewInvoiceSlideOutProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+export default function NewInvoiceSlideOut() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const isOpen = searchParams.get("action") === "new-invoice";
 
-export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const handleClose = () => {
+    // Closes the panel without a full page reload
+    router.push("/dashboard", { scroll: false });
+  };
 
   async function handleSubmit(formData: FormData) {
     console.log("[NewInvoiceSlideOut] Submitting form...");
@@ -27,7 +26,7 @@ export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideO
     try {
       await createInvoice(formData);
       console.log("[NewInvoiceSlideOut] Success, closing...");
-      onClose();
+      handleClose();
     } catch (err: any) {
       console.error("[NewInvoiceSlideOut] Error:", err);
       setError(err.message || "Failed to create invoice");
@@ -36,36 +35,30 @@ export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideO
     }
   }
 
-  // Prevent hydration errors by not rendering the portal on the server
-  if (!mounted) return null;
-
-  return createPortal(
+  return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* Backdrop - captures clicks to close */}
+          {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={onClose}
+            onClick={handleClose}
             className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99]"
           />
 
-          {/* Slide-out Panel */}
+          {/* Slide-Out Panel */}
           <motion.div
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 shadow-2xl p-8 flex flex-col z-[100] h-full"
+            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 z-[100] p-8 flex flex-col shadow-2xl h-full"
           >
-            <div className="flex items-center justify-between mb-12">
+            <div className="flex justify-between items-center mb-12">
               <h2 className="text-2xl font-bold tracking-tight text-white">New Invoice</h2>
-              <button
-                onClick={onClose}
-                className="p-2 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-              >
+              <button onClick={handleClose} className="p-2 rounded-full hover:bg-white/5 text-gray-400 hover:text-white transition-colors">
                 <X className="size-6" />
               </button>
             </div>
@@ -141,7 +134,6 @@ export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideO
           </motion.div>
         </>
       )}
-    </AnimatePresence>,
-    document.body
+    </AnimatePresence>
   );
 }

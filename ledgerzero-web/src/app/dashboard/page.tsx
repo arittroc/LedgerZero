@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
-import { LogOut, FileText, Activity, Wallet, ArrowRight } from "lucide-react";
+import { LogOut, FileText, Activity, Wallet, ArrowRight, Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server"; 
-import DashboardClientWrapper from "@/components/DashboardClientWrapper"; 
+import NewInvoiceSlideOut from "@/components/NewInvoiceSlideOut"; 
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -60,7 +61,14 @@ export default async function DashboardPage() {
                <h2 className="text-6xl font-bold tracking-tighter">
                  ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                </h2>
-               <DashboardClientWrapper />
+               <Link
+                 href="/dashboard?action=new-invoice"
+                 scroll={false}
+                 className="h-12 px-6 rounded-full bg-white text-black font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all"
+               >
+                 <Plus className="size-4" />
+                 New Invoice
+               </Link>
              </div>
           </div>
 
@@ -135,6 +143,7 @@ export default async function DashboardPage() {
 
         </div>
       </div>
+      <NewInvoiceSlideOut />
     </main>
   );
 }
