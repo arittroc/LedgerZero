@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
-import { LogOut, Plus, FileText, Activity, Wallet, ArrowRight } from "lucide-react";
+import { LogOut, FileText, Activity, Wallet, ArrowRight } from "lucide-react";
 import { createClient } from "@/utils/supabase/server"; 
+import { DashboardClientWrapper } from "@/components/DashboardClientWrapper"; 
 
 export default async function DashboardPage() {
   const supabase = await createClient();
@@ -59,10 +60,7 @@ export default async function DashboardPage() {
                <h2 className="text-6xl font-bold tracking-tighter">
                  ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
                </h2>
-               <button className="h-12 px-6 rounded-full bg-white text-black font-bold text-sm flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
-                 <Plus className="size-4" />
-                 New Invoice
-               </button>
+               <DashboardClientWrapper />
              </div>
           </div>
 
