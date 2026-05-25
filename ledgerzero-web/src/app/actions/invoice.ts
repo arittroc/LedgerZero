@@ -20,14 +20,28 @@ export async function createInvoice(formData: FormData) {
   }
 
   // 1. Get the user's business
-  const { data: business, error: bizError } = await supabase
+  let { data: business, error: bizError } = await supabase
     .from("businesses")
     .select("id")
     .eq("owner_id", session.user.id)
-    .single();
+    .maybeSingle();
 
-  if (bizError || !business) {
-    throw new Error("Business not found. Please complete onboarding.");
+  if (!business) {
+    // Auto-create a default business if none exists
+    const { data: newBiz, error: createBizError } = await supabase
+      .from("businesses")
+      .insert({
+        owner_id: session.user.id,
+        company_name: "My Business",
+      })
+      .select("id")
+      .single();
+
+    if (createBizError || !newBiz) {
+      console.error("Error creating default business:", createBizError);
+      throw new Error("Failed to initialize business profile");
+    }
+    business = newBiz;
   }
 
   // 2. Find or create the client
