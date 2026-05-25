@@ -36,19 +36,20 @@ export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideO
     }
   }
 
+  // Prevent hydration errors by not rendering the portal on the server
   if (!mounted) return null;
 
-  const content = (
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex justify-end pointer-events-none">
+        <>
           {/* Backdrop - captures clicks to close */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[99]"
           />
 
           {/* Slide-out Panel */}
@@ -56,8 +57,8 @@ export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideO
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 30, stiffness: 300 }}
-            className="relative z-[110] w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 shadow-2xl p-8 flex flex-col pointer-events-auto h-full"
+            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+            className="fixed inset-y-0 right-0 w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 shadow-2xl p-8 flex flex-col z-[100] h-full"
           >
             <div className="flex items-center justify-between mb-12">
               <h2 className="text-2xl font-bold tracking-tight text-white">New Invoice</h2>
@@ -138,10 +139,9 @@ export default function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideO
               Invoices are automatically set to 'pending' status.
             </div>
           </motion.div>
-        </div>
+        </>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
-
-  return createPortal(content, document.body);
 }
