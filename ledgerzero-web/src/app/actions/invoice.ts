@@ -3,23 +3,40 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 
+/**
+ * Sanitizes date strings from various formats (e.g., DD-MM-YYYY) to YYYY-MM-DD
+ */
+function sanitizeDate(dateStr: string): string {
+  if (!dateStr) return dateStr;
+  
+  // Check for DD-MM-YYYY or DD/MM/YYYY
+  const dmyMatch = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyMatch) {
+    const [, day, month, year] = dmyMatch;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+  }
+  
+  return dateStr;
+}
+
 export async function createInvoice(formData: FormData) {
   const supabase = await createClient();
 
   const clientName = formData.get("clientName") as string;
   const amount = parseFloat(formData.get("amount") as string);
-  const dueDate = formData.get("dueDate") as string;
+  const rawDueDate = formData.get("dueDate") as string;
+  const dueDate = sanitizeDate(rawDueDate);
 
   if (!clientName || isNaN(amount) || !dueDate) {
-    throw new Error("Missing required fields");
+    throw new Error("Missing or invalid required fields");
   }
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {
-    throw new Error("Unauthorized");
+    throw new Error("You must be logged in to create an invoice");
   }
 
-  // 1. Get the user's business
+  // 1. Get or Auto-create the user's business
   let { data: business, error: bizError } = await supabase
     .from("businesses")
     .select("id")
@@ -27,7 +44,6 @@ export async function createInvoice(formData: FormData) {
     .maybeSingle();
 
   if (!business) {
-    // Auto-create a default business if none exists
     const { data: newBiz, error: createBizError } = await supabase
       .from("businesses")
       .insert({
@@ -38,13 +54,13 @@ export async function createInvoice(formData: FormData) {
       .single();
 
     if (createBizError || !newBiz) {
-      console.error("Error creating default business:", createBizError);
-      throw new Error("Failed to initialize business profile");
+      console.error("Auto-onboarding failed:", createBizError);
+      throw new Error("Failed to initialize your business profile automatically.");
     }
     business = newBiz;
   }
 
-  // 2. Find or create the client
+  // 2. Find or create the client record
   let clientId: string;
   const { data: existingClient, error: clientFetchError } = await supabase
     .from("clients")
@@ -66,12 +82,12 @@ export async function createInvoice(formData: FormData) {
       .single();
 
     if (clientCreateError || !newClient) {
-      throw new Error("Failed to create client");
+      throw new Error(`Failed to create record for client: ${clientName}`);
     }
     clientId = newClient.id;
   }
 
-  // 3. Insert the invoice
+  // 3. Insert the invoice with status "sent" (per schema pending state)
   const { error: invError } = await supabase
     .from("invoices")
     .insert({
@@ -79,12 +95,12 @@ export async function createInvoice(formData: FormData) {
       client_id: clientId,
       total_amount: amount,
       due_date: dueDate,
-      status: "sent", // 'sent' serves as our 'pending' for now per schema types
+      status: "sent", 
     });
 
   if (invError) {
-    console.error("Error creating invoice:", invError);
-    throw new Error("Failed to create invoice");
+    console.error("Invoice insertion error:", invError);
+    throw new Error(`Database error: ${invError.message || "Failed to save invoice"}`);
   }
 
   revalidatePath("/dashboard");
