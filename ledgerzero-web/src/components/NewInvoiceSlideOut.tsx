@@ -55,18 +55,38 @@ function SlideOutContent() {
       reader.onload = (e) => {
         try {
           const text = e.target?.result as string;
-          const lines = text.split('\n').map(line => line.trim()).filter(line => line);
+          // Handle both Windows (\r\n) and Mac/Linux (\n) line endings
+          const lines = text.split(/\r?\n/).filter(line => line.trim());
           
-          // Grab the second row (assuming row 1 is headers)
           if (lines.length > 1) {
-            const columns = lines[1].split(',');
-            if (columns.length >= 3) {
-              setClientName(columns[0].replace(/['"]/g, '').trim());
-              setAmount(columns[1].replace(/['"]/g, '').replace('$', '').trim());
-              setDueDate(columns[2].replace(/['"]/g, '').trim()); 
-            } else {
-              setError("CSV must have at least 3 columns: Name, Amount, Date");
+            // Clean and lowercase headers for matching
+            const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/['"]/g, ''));
+            // Grab the first row of actual data
+            const values = lines[1].split(',').map(v => v.trim().replace(/['"]/g, ''));
+
+            // Smart mapping: Hunt for keywords in headers
+            let nameIdx = headers.findIndex(h => h.includes('name') || h.includes('client') || h.includes('customer') || h.includes('description'));
+            let amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('total') || h.includes('price') || h.includes('credit'));
+            let dateIdx = headers.findIndex(h => h.includes('date') || h.includes('due'));
+
+            // Fallback: If keywords aren't found, default to first 3 columns
+            if (nameIdx === -1) nameIdx = 0;
+            if (amountIdx === -1) amountIdx = 1;
+            if (dateIdx === -1) dateIdx = 2;
+
+            // Safely set the state if the column exists in the data row
+            if (values[nameIdx]) setClientName(values[nameIdx]);
+            if (values[amountIdx]) {
+              // Strip out any currency symbols or commas for the number input
+              const cleanAmount = values[amountIdx].replace(/[^0-9.-]+/g, "");
+              setAmount(cleanAmount);
             }
+            if (values[dateIdx]) {
+              // Basic attempt to ensure YYYY-MM-DD format if possible, otherwise raw
+              setDueDate(values[dateIdx]); 
+            }
+          } else {
+             setError("CSV appears to be empty or missing data rows.");
           }
         } catch (err) {
           setError("Failed to parse CSV format.");
