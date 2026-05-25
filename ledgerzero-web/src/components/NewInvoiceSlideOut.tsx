@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { X, Loader2, Calendar, User, DollarSign } from "lucide-react";
 import { createInvoice } from "@/app/actions/invoice";
 import { motion, AnimatePresence } from "framer-motion";
@@ -13,31 +14,41 @@ interface NewInvoiceSlideOutProps {
 export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   async function handleSubmit(formData: FormData) {
+    console.log("[NewInvoiceSlideOut] Submitting form...");
     setIsSubmitting(true);
     setError(null);
     try {
       await createInvoice(formData);
+      console.log("[NewInvoiceSlideOut] Success, closing...");
       onClose();
     } catch (err: any) {
+      console.error("[NewInvoiceSlideOut] Error:", err);
       setError(err.message || "Failed to create invoice");
     } finally {
       setIsSubmitting(false);
     }
   }
 
-  return (
+  if (!mounted) return null;
+
+  const content = (
     <AnimatePresence>
       {isOpen && (
-        <>
-          {/* Backdrop */}
+        <div className="fixed inset-0 z-[100] flex justify-end pointer-events-none">
+          {/* Backdrop - captures clicks to close */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
           />
 
           {/* Slide-out Panel */}
@@ -45,8 +56,8 @@ export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps)
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
-            transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className="fixed inset-y-0 right-0 z-50 w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 shadow-2xl p-8 flex flex-col"
+            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+            className="relative z-[110] w-full max-w-md bg-[#0a0a0a]/95 backdrop-blur-3xl border-l border-white/10 shadow-2xl p-8 flex flex-col pointer-events-auto h-full"
           >
             <div className="flex items-center justify-between mb-12">
               <h2 className="text-2xl font-bold tracking-tight text-white">New Invoice</h2>
@@ -66,7 +77,6 @@ export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps)
               )}
 
               <div className="space-y-6">
-                {/* Client Name Input */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
                     <User className="size-4" /> Client Name
@@ -79,7 +89,6 @@ export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps)
                   />
                 </div>
 
-                {/* Amount Input */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
                     <DollarSign className="size-4" /> Total Amount
@@ -97,7 +106,6 @@ export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps)
                   </div>
                 </div>
 
-                {/* Due Date Input */}
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-400 flex items-center gap-2">
                     <Calendar className="size-4" /> Due Date
@@ -115,31 +123,25 @@ export function NewInvoiceSlideOut({ isOpen, onClose }: NewInvoiceSlideOutProps)
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full h-16 bg-white text-black font-bold rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed group"
+                  className="w-full h-16 bg-white text-black font-bold rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmitting ? (
                     <Loader2 className="size-5 animate-spin" />
                   ) : (
-                    <>
-                      Create Invoice
-                      <motion.div
-                        animate={{ x: [0, 5, 0] }}
-                        transition={{ repeat: Infinity, duration: 1.5 }}
-                      >
-                        <User className="size-4 opacity-0 group-hover:opacity-100" />
-                      </motion.div>
-                    </>
+                    "Create Invoice"
                   )}
                 </button>
               </div>
             </form>
 
             <div className="mt-auto pt-8 border-t border-white/5 text-center text-xs text-gray-600">
-              Invoices are automatically set to 'pending' status upon creation.
+              Invoices are automatically set to 'pending' status.
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>
   );
+
+  return createPortal(content, document.body);
 }
