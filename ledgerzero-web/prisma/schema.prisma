@@ -16,60 +16,100 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  businesses       Business[]
   invoices         Invoice[]
   bankTransactions BankTransaction[]
   reconciliations  Reconciliation[]
   feedbacks        Feedback[]
 }
 
+model Business {
+  id          String   @id @default(cuid())
+  ownerId     String   @map("owner_id")
+  companyName String   @map("company_name")
+  currency    String   @default("USD")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user     User      @relation(fields: [ownerId], references: [id])
+  clients  Client[]
+  invoices Invoice[]
+  bankTransactions BankTransaction[]
+
+  @@map("businesses")
+}
+
+model Client {
+  id         String   @id @default(cuid())
+  businessId String   @map("business_id")
+  name       String
+  email      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  business Business  @relation(fields: [businessId], references: [id])
+  invoices Invoice[]
+
+  @@map("clients")
+}
+
 model Invoice {
   id             String           @id @default(cuid())
-  clientName     String
-  amount         Float
-  date           DateTime
+  businessId     String           @map("business_id")
+  clientId       String?          @map("client_id")
+  clientName     String?          // Fallback or legacy field
+  amount         Float            @map("total_amount")
+  date           DateTime         @map("due_date")
   status         String           @default("UNPAID")
   
-  userId         String
-  user           User             @relation(fields: [userId], references: [id])
+  userId         String?          @map("user_id") // Optional if linked via business
+  user           User?            @relation(fields: [userId], references: [id])
+  business       Business         @relation(fields: [businessId], references: [id])
+  client         Client?          @relation(fields: [clientId], references: [id])
 
   reconciliation Reconciliation?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@index([businessId])
+  @@map("invoices")
 }
 
 model BankTransaction {
   id             String           @id @default(cuid())
+  businessId     String?          @map("business_id")
   description    String
   amount         Float
   date           DateTime
   
-  userId         String
+  userId         String           @map("user_id")
   user           User             @relation(fields: [userId], references: [id])
+  business       Business?        @relation(fields: [businessId], references: [id])
 
   reconciliation Reconciliation?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
 
   @@index([userId])
+  @@map("bank_transactions")
 }
 
 model Reconciliation {
   id            String          @id @default(cuid())
+  businessId    String?         @map("business_id")
   
-  invoiceId     String          @unique
+  invoiceId     String          @unique @map("invoice_id")
   invoice       Invoice         @relation(fields: [invoiceId], references: [id])
   
-  transactionId String          @unique
+  transactionId String          @unique @map("transaction_id")
   transaction   BankTransaction @relation(fields: [transactionId], references: [id])
 
-  userId         String
-  user           User             @relation(fields: [userId], references: [id])
+  userId         String         @map("user_id")
+  user           User           @relation(fields: [userId], references: [id])
 
-  createdAt     DateTime        @default(now())
+  createdAt     DateTime        @default(now()) @map("created_at")
 
   @@index([userId])
+  @@map("reconciliations")
 }
 
 model Feedback {
@@ -77,10 +117,11 @@ model Feedback {
   message   String
   type      String   @default("BUG") // BUG, FEATURE, OTHER
   
-  userId    String
+  userId    String   @map("user_id")
   user      User     @relation(fields: [userId], references: [id])
 
-  createdAt DateTime @default(now())
+  createdAt DateTime @default(now()) @map("created_at")
 
   @@index([userId])
+  @@map("feedbacks")
 }

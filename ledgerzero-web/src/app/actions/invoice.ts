@@ -1,108 +1,83 @@
 "use server";
 
 import { createClient } from "@/utils/supabase/server";
+import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
-/**
- * Sanitizes date strings from various formats (e.g., DD-MM-YYYY) to YYYY-MM-DD
- */
-function sanitizeDate(dateStr: string): string {
-  if (!dateStr) return dateStr;
-
-  // DD-MM-YYYY -> YYYY-MM-DD (Postgres format)
-  const dmyMatch = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
-  if (dmyMatch) {
-    const [, day, month, year] = dmyMatch;
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  }
-
-  return dateStr;
-}
 export async function createInvoice(formData: FormData) {
   const supabase = await createClient();
 
-  const clientName = formData.get("clientName") as string;
-  const amount = parseFloat(formData.get("amount") as string);
-  const rawDueDate = formData.get("dueDate") as string;
-  const dueDate = sanitizeDate(rawDueDate);
-
-  if (!clientName || isNaN(amount) || !dueDate) {
-    throw new Error("Missing or invalid required fields");
-  }
-
+  // 1. Secure Authentication
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-    
   if (authError || !user) {
     throw new Error("Unauthorized: Please log in again.");
   }
 
-  // 1. Get or Auto-create the user's business
-  let { data: business, error: bizError } = await supabase
-    .from("businesses")
-    .select("id")
-    .eq("owner_id", user.id)
-    .maybeSingle();
+  // 2. Strict Type Parsing
+  const clientName = formData.get("clientName") as string;
+  const rawAmount = formData.get("amount") as string;
+  const rawDueDate = formData.get("dueDate") as string;
 
-  if (!business) {
-    const { data: newBiz, error: createBizError } = await supabase
-      .from("businesses")
-      .insert({
-        owner_id: user.id,
-        company_name: "My Business",
-      })
-      .select("id")
-      .single();
+  // Enforce Float and Date types strictly for Prisma
+  const amount = parseFloat(rawAmount);
+  const date = new Date(rawDueDate);
 
-    if (createBizError || !newBiz) {
-      console.error("Auto-onboarding failed:", createBizError);
-      throw new Error("Failed to initialize your business profile automatically.");
-    }
-    business = newBiz;
+  if (!clientName || isNaN(amount) || isNaN(date.getTime())) {
+    throw new Error("Missing or invalid required fields. Ensure amount is a number and date is valid.");
   }
 
-  // 2. Find or create the client record
-  let clientId: string;
-  const { data: existingClient, error: clientFetchError } = await supabase
-    .from("clients")
-    .select("id")
-    .eq("business_id", business.id)
-    .eq("name", clientName)
-    .maybeSingle();
-
-  if (existingClient) {
-    clientId = existingClient.id;
-  } else {
-    const { data: newClient, error: clientCreateError } = await supabase
-      .from("clients")
-      .insert({
-        business_id: business.id,
-        name: clientName,
-      })
-      .select("id")
-      .single();
-
-    if (clientCreateError || !newClient) {
-      throw new Error(`Failed to create record for client: ${clientName}`);
-    }
-    clientId = newClient.id;
-  }
-
-  // 3. Insert the invoice with status "sent" (per schema pending state)
-  const { error: invError } = await supabase
-    .from("invoices")
-    .insert({
-      business_id: business.id,
-      client_id: clientId,
-      total_amount: amount,
-      due_date: dueDate,
-      status: "sent", 
+  try {
+    // 3. Business & Client Management (Enforce relations)
+    // Find or Auto-onboard the user's business
+    let business = await prisma.business.findFirst({
+      where: { ownerId: user.id }
     });
 
-  if (invError) {
-    console.error("Invoice insertion error:", invError);
-    throw new Error(`Database error: ${invError.message || "Failed to save invoice"}`);
-  }
+    if (!business) {
+      business = await prisma.business.create({
+        data: {
+          ownerId: user.id,
+          companyName: "My Business",
+        }
+      });
+    }
 
-  revalidatePath("/dashboard");
-  return { success: true };
+    // Find or create the client record for this business
+    let client = await prisma.client.findFirst({
+      where: {
+        businessId: business.id,
+        name: clientName
+      }
+    });
+
+    if (!client) {
+      client = await prisma.client.create({
+        data: {
+          businessId: business.id,
+          name: clientName
+        }
+      });
+    }
+
+    // 4. Prisma Create Query with Strict Types and Relations
+    // This resolves the "Server Components render" error by ensuring types are plain or correctly handled
+    await prisma.invoice.create({
+      data: {
+        businessId: business.id,
+        clientId: client.id,
+        clientName: clientName, 
+        amount: amount,
+        date: date,
+        status: "pending", // explicitly set as requested
+        userId: user.id,
+      }
+    });
+
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Prisma Invoice Action Failure:", error);
+    // Throw a readable error string back to the client
+    throw new Error(`Database error: ${error.message || "Failed to save invoice"}`);
+  }
 }

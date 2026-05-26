@@ -12,6 +12,8 @@ async function main() {
   await prisma.reconciliation.deleteMany({});
   await prisma.invoice.deleteMany({});
   await prisma.bankTransaction.deleteMany({});
+  await prisma.client.deleteMany({});
+  await prisma.business.deleteMany({});
   await prisma.user.deleteMany({});
 
   console.log("🌱 Creating default user...");
@@ -23,11 +25,20 @@ async function main() {
     },
   });
 
+  console.log("🌱 Creating default business...");
+  const business = await prisma.business.create({
+    data: {
+      ownerId: user.id,
+      companyName: "Acme Industries",
+    },
+  });
+
   console.log("🌱 Seeding Invoices...");
   await prisma.invoice.createMany({
     data: [
       {
         id: "INV-001",
+        businessId: business.id,
         clientName: "Acme Corp",
         amount: 1250.0,
         status: "UNPAID",
@@ -36,6 +47,7 @@ async function main() {
       },
       {
         id: "INV-002",
+        businessId: business.id,
         clientName: "Stark Industries",
         amount: 450.0,
         status: "UNPAID",
@@ -44,6 +56,7 @@ async function main() {
       },
       {
         id: "INV-003",
+        businessId: business.id,
         clientName: "Wayne Tech",
         amount: 3200.0,
         status: "UNPAID",
@@ -62,6 +75,7 @@ async function main() {
         amount: 1250.0,
         date: new Date("2026-05-06"),
         userId: user.id,
+        businessId: business.id,
       },
       {
         id: "TXN-992",
@@ -69,6 +83,7 @@ async function main() {
         amount: 3200.0,
         date: new Date("2026-05-06"),
         userId: user.id,
+        businessId: business.id,
       },
       {
         id: "TXN-993",
@@ -76,6 +91,7 @@ async function main() {
         amount: -89.99,
         date: new Date("2026-05-07"),
         userId: user.id,
+        businessId: business.id,
       },
     ],
   });
@@ -90,4 +106,5 @@ main()
   })
   .finally(async () => {
     await prisma.$disconnect();
+    await pool.end();
   });
