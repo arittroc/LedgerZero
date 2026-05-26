@@ -30,23 +30,24 @@ export async function createInvoice(formData: FormData) {
     throw new Error("Missing or invalid required fields");
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    throw new Error("You must be logged in to create an invoice");
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+  if (authError || !user) {
+    throw new Error("Unauthorized: Please log in again.");
   }
 
   // 1. Get or Auto-create the user's business
   let { data: business, error: bizError } = await supabase
     .from("businesses")
     .select("id")
-    .eq("owner_id", session.user.id)
+    .eq("owner_id", user.id)
     .maybeSingle();
 
   if (!business) {
     const { data: newBiz, error: createBizError } = await supabase
       .from("businesses")
       .insert({
-        owner_id: session.user.id,
+        owner_id: user.id,
         company_name: "My Business",
       })
       .select("id")
