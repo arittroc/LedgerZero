@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { LogOut, FileText, Activity, Wallet, ArrowRight, Plus } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
+import { prisma } from "@/lib/prisma";
 import NewInvoiceSlideOut from "@/components/NewInvoiceSlideOut";
 import Link from "next/link";
 
@@ -8,19 +9,21 @@ export default async function DashboardPage() {
   const supabase = await createClient();
 
   // 1. Verify Authentication
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) {
     redirect("/login");
   }
 
-  // 2. Fetch Outstanding Invoices
-  const { data: invoices, error } = await supabase
-    .from("invoices")
-    .select("*")
-    .eq("status", "pending")
-    .order("created_at", { ascending: false });
+  // 2. Fetch Outstanding Invoices using Prisma for UUID and mapped field support
+  const invoices = await prisma.invoice.findMany({
+    where: { 
+      userId: user.id,
+      status: "pending" 
+    },
+    orderBy: { createdAt: "desc" }
+  });
 
-  const totalOutstanding = invoices?.reduce((sum, inv) => sum + Number(inv.total_amount), 0) || 0;
+  const totalOutstanding = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-hidden relative selection:bg-orange-500/30">
@@ -40,7 +43,7 @@ export default async function DashboardPage() {
           </div>
 
           <div className="flex items-center gap-6">
-            <span className="text-sm text-gray-500 font-medium">{session.user.email}</span>
+            <span className="text-sm text-gray-500 font-medium">{user.email}</span>
             <form action="/api/auth/logout" method="POST">
               <button type="submit" className="text-gray-500 hover:text-white transition-colors flex items-center gap-2 text-sm font-medium">
                 <LogOut className="size-4" />
@@ -63,7 +66,7 @@ export default async function DashboardPage() {
 
             <div className="flex items-end justify-between relative z-10">
               <h2 className="text-6xl font-bold tracking-tighter">
-                ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                ${totalOutstanding.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </h2>
 
               {/* Elevated Link to ensure clickability */}
@@ -106,11 +109,11 @@ export default async function DashboardPage() {
                       <div className="size-2 rounded-full bg-orange-500 animate-pulse" />
                       <div>
                         <p className="font-medium text-white mb-0.5">Invoice #{invoice.id.split('-')[0]}</p>
-                        <p className="text-xs text-gray-500">Due {new Date(invoice.due_date).toLocaleDateString()}</p>
+                        <p className="text-xs text-gray-500">Due {new Date(invoice.date).toLocaleDateString()}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
-                      <span className="font-semibold">${Number(invoice.total_amount).toLocaleString()}</span>
+                      <span className="font-semibold">${Number(invoice.amount).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <ArrowRight className="size-4 text-gray-600 group-hover/item:text-white transition-colors" />
                     </div>
                   </div>
