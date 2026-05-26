@@ -2,7 +2,7 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider = "prisma-client-js"  
+  provider = "prisma-client-js"
 }
 
 datasource db {
@@ -10,7 +10,7 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(cuid())
+  id           String   @id @default(uuid()) @db.Uuid
   email        String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
@@ -21,11 +21,13 @@ model User {
   bankTransactions BankTransaction[]
   reconciliations  Reconciliation[]
   feedbacks        Feedback[]
+
+  @@map("users")
 }
 
 model Business {
-  id          String   @id @default(cuid())
-  ownerId     String   @map("owner_id")
+  id          String   @id @default(uuid()) @db.Uuid
+  ownerId     String   @map("owner_id") @db.Uuid
   companyName String   @map("company_name")
   currency    String   @default("USD")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -39,8 +41,8 @@ model Business {
 }
 
 model Client {
-  id         String   @id @default(cuid())
-  businessId String   @map("business_id")
+  id         String   @id @default(uuid()) @db.Uuid
+  businessId String   @map("business_id") @db.Uuid
   name       String
   email      String?
   createdAt  DateTime @default(now()) @map("created_at")
@@ -52,15 +54,15 @@ model Client {
 }
 
 model Invoice {
-  id             String           @id @default(cuid())
-  businessId     String           @map("business_id")
-  clientId       String?          @map("client_id")
+  id             String           @id @default(uuid()) @db.Uuid
+  businessId     String           @map("business_id") @db.Uuid
+  clientId       String?          @map("client_id") @db.Uuid
   clientName     String?          // Fallback or legacy field
   amount         Float            @map("total_amount")
   date           DateTime         @map("due_date")
   status         String           @default("UNPAID")
   
-  userId         String?          @map("user_id") // Optional if linked via business
+  userId         String?          @map("user_id") @db.Uuid // Optional if linked via business
   user           User?            @relation(fields: [userId], references: [id])
   business       Business         @relation(fields: [businessId], references: [id])
   client         Client?          @relation(fields: [clientId], references: [id])
@@ -75,13 +77,13 @@ model Invoice {
 }
 
 model BankTransaction {
-  id             String           @id @default(cuid())
-  businessId     String?          @map("business_id")
+  id             String           @id @default(uuid()) @db.Uuid
+  businessId     String?          @map("business_id") @db.Uuid
   description    String
   amount         Float
   date           DateTime
   
-  userId         String           @map("user_id")
+  userId         String           @map("user_id") @db.Uuid
   user           User             @relation(fields: [userId], references: [id])
   business       Business?        @relation(fields: [businessId], references: [id])
 
@@ -94,16 +96,16 @@ model BankTransaction {
 }
 
 model Reconciliation {
-  id            String          @id @default(cuid())
-  businessId    String?         @map("business_id")
+  id            String          @id @default(uuid()) @db.Uuid
+  businessId    String?         @map("business_id") @db.Uuid
   
-  invoiceId     String          @unique @map("invoice_id")
+  invoiceId     String          @unique @map("invoice_id") @db.Uuid
   invoice       Invoice         @relation(fields: [invoiceId], references: [id])
   
-  transactionId String          @unique @map("transaction_id")
+  transactionId String          @unique @map("transaction_id") @db.Uuid
   transaction   BankTransaction @relation(fields: [transactionId], references: [id])
 
-  userId         String         @map("user_id")
+  userId         String         @map("user_id") @db.Uuid
   user           User           @relation(fields: [userId], references: [id])
 
   createdAt     DateTime        @default(now()) @map("created_at")
@@ -113,11 +115,11 @@ model Reconciliation {
 }
 
 model Feedback {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid()) @db.Uuid
   message   String
   type      String   @default("BUG") // BUG, FEATURE, OTHER
   
-  userId    String   @map("user_id")
+  userId    String   @map("user_id") @db.Uuid
   user      User     @relation(fields: [userId], references: [id])
 
   createdAt DateTime @default(now()) @map("created_at")

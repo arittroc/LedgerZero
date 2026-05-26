@@ -4,6 +4,8 @@ This file contains the foundational mandates for development on the LedgerZero p
 
 ## Local Documentation & Tracking
 
+Every session MUST begin with a review of the project notes in the `notes/` directory, especially `progress.md`, to ensure continuity and context.
+
 Every session or meaningful task MUST conclude with an update to the local project notes. These files are located in the `notes/` directory and are ignored by Git.
 
 1.  **Read the Rules:** Before updating any notes, you MUST read `notes/rules.md` to ensure compliance with the established formatting and maintenance standards.

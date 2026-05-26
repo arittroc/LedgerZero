@@ -1,20 +1,23 @@
 [
   {
-    "id": "INV-001",
+    "id": "550e8400-e29b-41d4-a716-446655440001",
     "clientName": "Acme Corp",
-    "amount": 1250.0,
-    "date": "2026-05-01"
+    "amount": 1250,
+    "date": "2026-05-01",
+    "status": "UNPAID"
   },
   {
-    "id": "INV-002",
+    "id": "550e8400-e29b-41d4-a716-446655440002",
     "clientName": "Stark Industries",
-    "amount": 450.0,
-    "date": "2026-05-02"
+    "amount": 450,
+    "date": "2026-05-02",
+    "status": "UNPAID"
   },
   {
-    "id": "INV-003",
+    "id": "550e8400-e29b-41d4-a716-446655440003",
     "clientName": "Wayne Tech",
-    "amount": 3200.0,
-    "date": "2026-05-03"
+    "amount": 3200,
+    "date": "2026-05-03",
+    "status": "UNPAID"
   }
 ]

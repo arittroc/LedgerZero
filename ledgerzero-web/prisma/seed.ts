@@ -37,7 +37,7 @@ async function main() {
   await prisma.invoice.createMany({
     data: [
       {
-        id: "INV-001",
+        id: "550e8400-e29b-41d4-a716-446655440001",
         businessId: business.id,
         clientName: "Acme Corp",
         amount: 1250.0,
@@ -46,7 +46,7 @@ async function main() {
         userId: user.id,
       },
       {
-        id: "INV-002",
+        id: "550e8400-e29b-41d4-a716-446655440002",
         businessId: business.id,
         clientName: "Stark Industries",
         amount: 450.0,
@@ -55,7 +55,7 @@ async function main() {
         userId: user.id,
       },
       {
-        id: "INV-003",
+        id: "550e8400-e29b-41d4-a716-446655440003",
         businessId: business.id,
         clientName: "Wayne Tech",
         amount: 3200.0,
@@ -70,7 +70,7 @@ async function main() {
   await prisma.bankTransaction.createMany({
     data: [
       {
-        id: "TXN-991",
+        id: "550e8400-e29b-41d4-a716-446655440991",
         description: "WIRE IN ACME CORP",
         amount: 1250.0,
         date: new Date("2026-05-06"),
@@ -78,7 +78,7 @@ async function main() {
         businessId: business.id,
       },
       {
-        id: "TXN-992",
+        id: "550e8400-e29b-41d4-a716-446655440992",
         description: "STRIPE PAYOUT WT",
         amount: 3200.0,
         date: new Date("2026-05-06"),
@@ -86,7 +86,7 @@ async function main() {
         businessId: business.id,
       },
       {
-        id: "TXN-993",
+        id: "550e8400-e29b-41d4-a716-446655440993",
         description: "ACH DEP FAST NET",
         amount: -89.99,
         date: new Date("2026-05-07"),
