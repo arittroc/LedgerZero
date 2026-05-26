@@ -8,17 +8,16 @@ import { revalidatePath } from "next/cache";
  */
 function sanitizeDate(dateStr: string): string {
   if (!dateStr) return dateStr;
-  
-  // Check for DD-MM-YYYY or DD/MM/YYYY
-  const dmyMatch = dateStr.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+
+  // DD-MM-YYYY -> YYYY-MM-DD (Postgres format)
+  const dmyMatch = dateStr.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
   if (dmyMatch) {
     const [, day, month, year] = dmyMatch;
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   }
-  
+
   return dateStr;
 }
-
 export async function createInvoice(formData: FormData) {
   const supabase = await createClient();
 
