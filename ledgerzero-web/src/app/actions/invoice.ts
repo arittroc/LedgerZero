@@ -67,7 +67,7 @@ export async function createInvoice(formData: FormData) {
         clientName: clientName, 
         amount: amount,
         date: date,
-        status: "pending", 
+        status: "UNPAID", 
         userId: user.id,
       }
     });
