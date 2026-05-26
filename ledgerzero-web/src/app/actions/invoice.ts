@@ -5,28 +5,28 @@ import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function createInvoice(formData: FormData) {
-  const supabase = await createClient();
-
-  // 1. Secure Authentication
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    throw new Error("Unauthorized: Please log in again.");
-  }
-
-  // 2. Strict Type Parsing
-  const clientName = formData.get("clientName") as string;
-  const rawAmount = formData.get("amount") as string;
-  const rawDueDate = formData.get("dueDate") as string;
-
-  // Enforce Float and Date types strictly for Prisma
-  const amount = parseFloat(rawAmount);
-  const date = new Date(rawDueDate);
-
-  if (!clientName || isNaN(amount) || isNaN(date.getTime())) {
-    throw new Error("Missing or invalid required fields. Ensure amount is a number and date is valid.");
-  }
-
   try {
+    const supabase = await createClient();
+
+    // 1. Secure Authentication
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) {
+      throw new Error("Unauthorized: Please log in again.");
+    }
+
+    // 2. Strict Type Parsing
+    const clientName = formData.get("clientName") as string;
+    const rawAmount = formData.get("amount") as string;
+    const rawDueDate = formData.get("dueDate") as string;
+
+    // Enforce Float and Date types strictly for Prisma
+    const amount = parseFloat(rawAmount);
+    const date = new Date(rawDueDate);
+
+    if (!clientName || isNaN(amount) || isNaN(date.getTime())) {
+      throw new Error("Missing or invalid required fields. Ensure amount is a number and date is valid.");
+    }
+
     // 3. Business & Client Management (Enforce relations)
     // Find or Auto-onboard the user's business
     let business = await prisma.business.findFirst({
@@ -68,16 +68,24 @@ export async function createInvoice(formData: FormData) {
         clientName: clientName, 
         amount: amount,
         date: date,
-        status: "pending", // explicitly set as requested
+        status: "pending", 
         userId: user.id,
       }
     });
 
+    // 5. Success Handling & Revalidation
     revalidatePath("/dashboard");
     return { success: true };
+
   } catch (error: any) {
-    console.error("Prisma Invoice Action Failure:", error);
-    // Throw a readable error string back to the client
-    throw new Error(`Database error: ${error.message || "Failed to save invoice"}`);
+    // Console log the original error for server-side debugging
+    console.error("Critical Invoice Action Failure:", error);
+
+    // Throw a new, safe, serializable error string for the client
+    throw new Error(
+      error instanceof Error 
+        ? error.message 
+        : "A database error occurred while creating the invoice."
+    );
   }
 }
