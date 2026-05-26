@@ -37,10 +37,14 @@ function SlideOutContent() {
     setIsSubmitting(true);
     setError(null);
     try {
-      await createInvoice(formData);
-      handleClose();
+      const result = await createInvoice(formData);
+      if (result?.error) {
+        setError(result.error);
+      } else {
+        handleClose();
+      }
     } catch (err: any) {
-      setError(err.message || "Failed to create invoice");
+      setError("An unexpected error occurred. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

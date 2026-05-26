@@ -11,7 +11,7 @@ export async function createInvoice(formData: FormData) {
     // 1. Secure Authentication
     const { data: { user }, error: authError } = await supabase.auth.getUser();
     if (authError || !user) {
-      throw new Error("Unauthorized: Please log in again.");
+      return { error: "Unauthorized: Please log in again." };
     }
 
     // 2. Strict Type Parsing
@@ -24,7 +24,7 @@ export async function createInvoice(formData: FormData) {
     const date = new Date(rawDueDate);
 
     if (!clientName || isNaN(amount) || isNaN(date.getTime())) {
-      throw new Error("Missing or invalid required fields. Ensure amount is a number and date is valid.");
+      return { error: "Missing or invalid required fields. Ensure amount is a number and date is valid." };
     }
 
     // 3. Business & Client Management (Enforce relations)
@@ -60,7 +60,6 @@ export async function createInvoice(formData: FormData) {
     }
 
     // 4. Prisma Create Query with Strict Types and Relations
-    // This resolves the "Server Components render" error by ensuring types are plain or correctly handled
     await prisma.invoice.create({
       data: {
         businessId: business.id,
@@ -79,13 +78,13 @@ export async function createInvoice(formData: FormData) {
 
   } catch (error: any) {
     // Console log the original error for server-side debugging
-    console.error("Critical Invoice Action Failure:", error);
+    console.error("Database Error:", error);
 
-    // Throw a new, safe, serializable error string for the client
-    throw new Error(
-      error instanceof Error 
+    // Return a safe, serializable error object instead of throwing
+    return { 
+      error: error instanceof Error 
         ? error.message 
-        : "A database error occurred while creating the invoice."
-    );
+        : "Failed to create invoice due to a database error." 
+    };
   }
 }
