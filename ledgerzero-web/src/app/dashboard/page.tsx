@@ -18,7 +18,6 @@ export default async function DashboardPage() {
   const invoices = await prisma.invoice.findMany({
     where: { 
       userId: user.id,
-      status: "pending" 
     },
     orderBy: { createdAt: "desc" }
   });
@@ -89,7 +88,7 @@ export default async function DashboardPage() {
                 <h3 className="text-lg font-semibold">Outstanding Invoices</h3>
               </div>
               <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-medium text-gray-400">
-                {invoices?.length || 0} Pending
+                {invoices?.length || 0} Total
               </span>
             </div>
 
