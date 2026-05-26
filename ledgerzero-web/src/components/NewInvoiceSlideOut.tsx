@@ -82,8 +82,13 @@ function SlideOutContent() {
               setAmount(cleanAmount);
             }
             if (values[dateIdx]) {
-              // Basic attempt to ensure YYYY-MM-DD format if possible, otherwise raw
-              setDueDate(values[dateIdx]); 
+              let parsedDate = values[dateIdx];
+              // Convert DD-MM-YYYY or DD/MM/YYYY to YYYY-MM-DD
+              const dateMatch = parsedDate.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
+              if (dateMatch) {
+                parsedDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+              }
+              setDueDate(parsedDate);
             }
           } else {
              setError("CSV appears to be empty or missing data rows.");
