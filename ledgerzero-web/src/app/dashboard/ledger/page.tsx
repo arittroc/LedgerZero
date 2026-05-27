@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { LogOut, ArrowLeft, History, FileText, CheckCircle2, Wallet } from "lucide-react";
+import { LogOut, ArrowLeft, History, FileText, CheckCircle2, Wallet, Download } from "lucide-react";
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
@@ -75,14 +75,27 @@ export default async function LedgerPage() {
         </Link>
 
         {/* Title Section */}
-        <div className="mb-12">
-          <div className="flex items-center gap-3 mb-2">
-            <History className="size-6 text-orange-500" />
-            <h2 className="text-4xl font-bold tracking-tighter">Reconciliation Ledger</h2>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <History className="size-6 text-orange-500" />
+              <h2 className="text-4xl font-bold tracking-tighter">Reconciliation Ledger</h2>
+            </div>
+            <p className="text-gray-500 max-w-lg">
+              A complete audit trail of all automated matches between your bank deposits and sent invoices.
+            </p>
           </div>
-          <p className="text-gray-500 max-w-lg">
-            A complete audit trail of all automated matches between your bank deposits and sent invoices.
-          </p>
+
+          {history && history.length > 0 && (
+            <a
+              href="/api/export/ledger"
+              download
+              className="inline-flex items-center gap-2 px-6 h-12 rounded-full bg-white/5 border border-white/10 backdrop-blur-md text-sm font-semibold text-white hover:bg-white/10 transition-all active:scale-95"
+            >
+              <Download className="size-4" />
+              Export to CSV
+            </a>
+          )}
         </div>
 
         {/* Ledger Table Section */}
