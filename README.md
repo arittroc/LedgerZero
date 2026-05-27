@@ -1,59 +1,60 @@
-# LedgerZero
+# LedgerZero v1.1: The Zero-Effort Reconciliation Engine
 
-LedgerZero is a high-fidelity reconciliation dashboard designed for micro-businesses to clear invoice matches without manual data entry. It provides a visual, 3-column workspace to efficiently pair invoices with bank transactions, ensuring your books are always accurate with minimal effort.
+LedgerZero is a cloud-native financial operating system designed to eliminate manual data entry for modern businesses. By combining **Atomic Reconciliation** with a multimodal **AI Omni-Parser**, LedgerZero transforms unstructured financial reality—receipts, photos, and messy bank feeds—into a verified, audit-ready ledger with zero friction.
 
-## Features
+---
 
-- **Automated Reconciliation**: Exact amount matching logic to quickly pair payments with outstanding invoices.
-- **Visual Workspace**: A modern, glassmorphic dashboard featuring a split-screen view of invoices and bank feeds.
-- **Persistence**: Fully integrated with PostgreSQL via Prisma for reliable data management and tracking.
-- **Containerized**: Ready for deployment anywhere with Docker and Docker Compose.
+## ✨ What's New in v1.1: The Omni-Parser Upgrade
+The defining milestone of v1.1 is the transition from strict deterministic ingestion to agentic automation.
+- **Multimodal AI Ingestion:** Powered by **Google Gemini 1.5 Flash**, the new "Smart Scan" feature extracts structured financial data from raw images, PDFs, and unstructured text files.
+- **Agentic Normalization:** Intelligent extraction of client names, amounts, and due dates with automated business-context mapping.
+- **Glassmorphic Ledger History:** A high-fidelity, Apple-inspired audit trail for all auto-reconciled transactions.
+- **CSV Audit Export:** Secure, one-click exports for external reporting and tax compliance.
 
-## Tech Stack
+---
 
-- **Frontend**: Next.js 15 (App Router), TypeScript, Tailwind CSS 4 (OKLCH, Glassmorphism).
-- **ORM**: Prisma 7.
-- **Database**: PostgreSQL 15.
-- **Orchestration**: Docker & Docker Compose.
+## 🛠 The Tech Stack
+Built for speed, security, and extreme developer productivity:
+- **Frontend:** Next.js 14+ (App Router), React 19, Tailwind CSS 4.
+- **Backend:** Next.js Server Actions & Route Handlers.
+- **Database:** PostgreSQL via **Supabase**.
+- **ORM:** Prisma (Native UUID support).
+- **AI:** Google Generative AI (Gemini 1.5 Flash).
+- **Infrastructure:** Vercel Edge Network.
 
-## Quick Start
+---
 
-Follow these steps to get the project running locally using Docker:
+## 🚀 Getting Started
 
-### 1. Prerequisites
-- [Docker](https://www.docker.com/products/docker-desktop/)
-- [Docker Compose](https://docs.docker.com/compose/install/)
+### 1. Environment Setup
+Create a `.env` file in the `ledgerzero-web` directory:
+```env
+DATABASE_URL="postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres"
+NEXT_PUBLIC_SUPABASE_URL="https://[ref].supabase.co"
+NEXT_PUBLIC_SUPABASE_ANON_KEY="your-anon-key"
+GEMINI_API_KEY="your-google-ai-key"
+```
+*Note: Ensure you use port **5432** (Direct Connection) for Prisma migrations to bypass connection pooling conflicts.*
 
-### 2. Setup Environment
-Copy the example environment file to create your local `.env`:
+### 2. Installation & Database Sync
 ```bash
-cp .env.example .env
+npm install
+npx prisma generate
+npx prisma db push
 ```
 
-### 3. Launch the Application
-Run the following command to build and start the database and web services:
+### 3. Run Development Server
 ```bash
-docker-compose up --build -d
+npm run dev
 ```
 
-Once the build is complete and the containers are running:
-- **Dashboard**: [http://localhost:3000](http://localhost:3000)
-- **Database**: Port `5432`
+---
 
-The system will automatically run Prisma migrations and seed the database with initial data on startup.
+## 📈 Roadmap & Investment Opportunity
+LedgerZero is built as a foundational SaaS infrastructure. Our immediate scaling targets include:
+1. **Plaid Integration:** Real-time, authenticated bank feed synchronization.
+2. **AI Fuzzy Matching:** Intelligent handling of partial payments and localized currency discrepancies.
+3. **Enterprise RLS:** Multi-tenant data isolation for global SaaS scaling.
 
-## Development
-
-If you wish to run the project outside of Docker:
-1. Ensure you have a PostgreSQL instance running.
-2. Update the `DATABASE_URL` in your `.env` to point to your local database.
-3. Install dependencies: `cd ledgerzero-web && npm install`
-4. Run migrations: `npx prisma migrate dev`
-5. Start the development server: `npm run dev`
-
-## License
-Private / All Rights Reserved
-
-## Roadmap
-
-Currently supports CSV file uploads for bank transactions. Direct banking integration via the Plaid API is planned for a future release.
+---
+*LedgerZero: Because financial clarity shouldn't require effort.*
