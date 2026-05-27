@@ -3,6 +3,7 @@ import { LogOut, FileText, Activity, Wallet, ArrowRight, Plus } from "lucide-rea
 import { createClient } from "@/utils/supabase/server";
 import { prisma } from "@/lib/prisma";
 import NewInvoiceSlideOut from "@/components/NewInvoiceSlideOut";
+import BankFeed from "@/components/BankFeed";
 import Link from "next/link";
 
 export default async function DashboardPage() {
@@ -14,15 +15,34 @@ export default async function DashboardPage() {
     redirect("/login");
   }
 
-  // 2. Fetch Outstanding Invoices using Prisma for UUID and mapped field support
+  // 2. Fetch Outstanding Invoices using Prisma
   const invoices = await prisma.invoice.findMany({
     where: { 
       userId: user.id,
+      status: "UNPAID",
     },
     orderBy: { createdAt: "desc" }
   });
 
+  // 3. Fetch Unreconciled Bank Transactions
+  const bankTransactions = await prisma.bankTransaction.findMany({
+    where: {
+      userId: user.id,
+      status: "UNRECONCILED",
+    },
+    orderBy: { date: "desc" },
+    take: 5,
+  });
+
   const totalOutstanding = invoices?.reduce((sum, inv) => sum + Number(inv.amount), 0) || 0;
+
+  // Safely stringify data for client components to prevent hydration errors or rendering crashes
+  const serializedTransactions = bankTransactions.map(tx => ({
+    id: tx.id,
+    description: tx.description,
+    amount: Number(tx.amount),
+    date: new Date(tx.date).toLocaleDateString(),
+  }));
 
   return (
     <main className="min-h-screen bg-[#050505] text-white overflow-hidden relative selection:bg-orange-500/30">
@@ -121,33 +141,8 @@ export default async function DashboardPage() {
             )}
           </div>
 
-          {/* Live Bank Feed Placeholder */}
-          <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-white/[0.02] backdrop-blur-[32px] p-8 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
-            <div className="flex items-center gap-3 mb-8">
-              <Activity className="size-5 text-gray-400" />
-              <h3 className="text-lg font-semibold">Live Bank Feed</h3>
-            </div>
-
-            <div className="absolute inset-0 bg-gradient-to-t from-[#050505] via-transparent to-transparent z-10" />
-
-            <div className="space-y-4 opacity-50 grayscale">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between p-4 rounded-2xl border border-white/5 bg-white/5">
-                  <div className="flex flex-col gap-1">
-                    <div className="w-24 h-4 rounded bg-white/20 animate-pulse" />
-                    <div className="w-16 h-3 rounded bg-white/10 animate-pulse" />
-                  </div>
-                  <div className="w-20 h-4 rounded bg-white/20 animate-pulse" />
-                </div>
-              ))}
-            </div>
-
-            <div className="absolute inset-0 z-20 flex items-center justify-center pointer-events-none">
-              <span className="px-4 py-2 rounded-full bg-black/50 border border-white/10 backdrop-blur-md text-xs font-semibold text-white tracking-widest uppercase">
-                Awaiting Connection
-              </span>
-            </div>
-          </div>
+          {/* Live Bank Feed Component */}
+          <BankFeed initialTransactions={serializedTransactions} />
 
         </div>
       </div>
