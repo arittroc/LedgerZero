@@ -64,6 +64,7 @@ model BankTransaction {
   description    String
   amount         Float
   date           DateTime
+  status         String           @default("UNRECONCILED") // e.g., UNRECONCILED, RECONCILED
   
   userId         String           @map("user_id") @db.Uuid // Managed loosely
   business       Business?        @relation(fields: [businessId], references: [id])
@@ -88,7 +89,7 @@ model Reconciliation {
 
   userId         String         @map("user_id") @db.Uuid // Managed loosely
 
-  createdAt     DateTime        @default(now()) @map("created_at")
+  reconciledAt  DateTime        @default(now()) @map("reconciled_at")
 
   @@index([userId])
   @@map("reconciliations")
