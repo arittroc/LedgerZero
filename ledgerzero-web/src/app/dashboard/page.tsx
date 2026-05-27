@@ -54,11 +54,25 @@ export default async function DashboardPage() {
 
         {/* Top Navigation / Header */}
         <header className="flex items-center justify-between mb-16 animate-in fade-in slide-in-from-top-4 duration-700">
-          <div className="flex items-center gap-3">
-            <div className="grid size-10 place-items-center rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
-              <Wallet className="size-5 text-white" />
+          <div className="flex items-center gap-8">
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-xl bg-white/10 border border-white/20 backdrop-blur-md">
+                <Wallet className="size-5 text-white" />
+              </div>
+              <h1 className="text-xl font-bold tracking-tight">LedgerZero</h1>
             </div>
-            <h1 className="text-xl font-bold tracking-tight">LedgerZero</h1>
+
+            <nav className="hidden md:flex items-center gap-1 p-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-sm">
+              <div className="px-4 py-1.5 rounded-full text-sm font-medium bg-white/10 text-white">
+                Dashboard
+              </div>
+              <Link
+                href="/dashboard/ledger"
+                className="px-4 py-1.5 rounded-full text-sm font-medium text-gray-400 hover:text-white transition-colors"
+              >
+                Ledger History
+              </Link>
+            </nav>
           </div>
 
           <div className="flex items-center gap-6">
