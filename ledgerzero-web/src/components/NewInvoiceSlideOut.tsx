@@ -2,9 +2,9 @@
 
 import { useState, Suspense, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Loader2, Calendar, User, DollarSign, UploadCloud } from "lucide-react";
+import { X, Loader2, Calendar, User, DollarSign, UploadCloud, Sparkles } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { createInvoice } from "@/app/actions/invoice";
+import { createInvoice, processSmartInvoice } from "@/app/actions/invoice";
 
 function SlideOutContent() {
   const router = useRouter();
@@ -12,6 +12,7 @@ function SlideOutContent() {
   const isOpen = searchParams.get("action") === "new-invoice";
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Drag and Drop & Auto-fill State
@@ -30,6 +31,7 @@ function SlideOutContent() {
     setDueDate("");
     setSelectedFile(null);
     setError(null);
+    setIsAnalyzing(false);
     router.push("/dashboard", { scroll: false });
   };
 
@@ -50,60 +52,28 @@ function SlideOutContent() {
     }
   }
 
-  const handleFile = (file: File) => {
-    if (file.type === "text/csv" || file.name.endsWith('.csv')) {
-      setSelectedFile(file);
-      setError(null);
-      
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        try {
-          const text = e.target?.result as string;
-          // Handle both Windows (\r\n) and Mac/Linux (\n) line endings
-          const lines = text.split(/\r?\n/).filter(line => line.trim());
-          
-          if (lines.length > 1) {
-            // Clean and lowercase headers for matching
-            const headers = lines[0].toLowerCase().split(',').map(h => h.trim().replace(/['"]/g, ''));
-            // Grab the first row of actual data
-            const values = lines[1].split(',').map(v => v.trim().replace(/['"]/g, ''));
+  const handleFile = async (file: File) => {
+    setSelectedFile(file);
+    setError(null);
+    setIsAnalyzing(true);
 
-            // Smart mapping: Hunt for keywords in headers
-            let nameIdx = headers.findIndex(h => h.includes('name') || h.includes('client') || h.includes('customer') || h.includes('description'));
-            let amountIdx = headers.findIndex(h => h.includes('amount') || h.includes('total') || h.includes('price') || h.includes('credit'));
-            let dateIdx = headers.findIndex(h => h.includes('date') || h.includes('due'));
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
 
-            // Fallback: If keywords aren't found, default to first 3 columns
-            if (nameIdx === -1) nameIdx = 0;
-            if (amountIdx === -1) amountIdx = 1;
-            if (dateIdx === -1) dateIdx = 2;
+      const result = await processSmartInvoice(formData);
 
-            // Safely set the state if the column exists in the data row
-            if (values[nameIdx]) setClientName(values[nameIdx]);
-            if (values[amountIdx]) {
-              // Strip out any currency symbols or commas for the number input
-              const cleanAmount = values[amountIdx].replace(/[^0-9.-]+/g, "");
-              setAmount(cleanAmount);
-            }
-            if (values[dateIdx]) {
-              let parsedDate = values[dateIdx];
-              // Convert DD-MM-YYYY or DD/MM/YYYY to YYYY-MM-DD
-              const dateMatch = parsedDate.match(/^(\d{2})[-/](\d{2})[-/](\d{4})$/);
-              if (dateMatch) {
-                parsedDate = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
-              }
-              setDueDate(parsedDate);
-            }
-          } else {
-             setError("CSV appears to be empty or missing data rows.");
-          }
-        } catch (err) {
-          setError("Failed to parse CSV format.");
-        }
-      };
-      reader.readAsText(file);
-    } else {
-      setError("Please upload a valid .csv file.");
+      if (result.error) {
+        setError(result.error);
+      } else if (result.data) {
+        setClientName(result.data.clientName);
+        setAmount(result.data.amount.toString());
+        setDueDate(result.data.dueDate);
+      }
+    } catch (err) {
+      setError("AI extraction failed. Please enter details manually.");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -192,7 +162,7 @@ function SlideOutContent() {
               <div className="pt-8 space-y-4">
                 <button
                   type="submit"
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || isAnalyzing}
                   className="w-full h-14 bg-white text-black font-bold rounded-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
                 >
                   {isSubmitting ? (
@@ -204,7 +174,7 @@ function SlideOutContent() {
                 
                 <div className="relative flex items-center py-2">
                   <div className="flex-grow border-t border-white/10"></div>
-                  <span className="flex-shrink-0 mx-4 text-xs text-gray-500 uppercase tracking-widest font-medium">Or Auto-Fill</span>
+                  <span className="flex-shrink-0 mx-4 text-xs text-gray-500 uppercase tracking-widest font-medium">Or Smart Scan</span>
                   <div className="flex-grow border-t border-white/10"></div>
                 </div>
 
@@ -218,16 +188,18 @@ function SlideOutContent() {
                       handleFile(e.dataTransfer.files[0]);
                     }
                   }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className={`w-full border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ${
+                  onClick={() => !isAnalyzing && fileInputRef.current?.click()}
+                  className={`w-full border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center transition-all duration-200 ${
+                    isAnalyzing ? "cursor-wait border-orange-500/50 bg-orange-500/5" : "cursor-pointer border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                  } ${
                     isDragging 
                       ? "border-orange-500 bg-orange-500/10 scale-[1.02]" 
-                      : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
+                      : ""
                   }`}
                 >
                   <input
                     type="file"
-                    accept=".csv"
+                    accept="image/*,application/pdf,text/csv,text/plain"
                     className="hidden"
                     ref={fileInputRef}
                     onChange={(e) => {
@@ -236,10 +208,25 @@ function SlideOutContent() {
                       }
                     }}
                   />
-                  <UploadCloud className={`size-8 mb-3 transition-colors ${isDragging ? "text-orange-500" : "text-gray-400"}`} />
-                  <p className="text-sm font-medium text-white text-center">
-                    {selectedFile ? <span className="text-orange-400">{selectedFile.name}</span> : "Click or drag CSV to upload"}
-                  </p>
+                  {isAnalyzing ? (
+                    <>
+                      <div className="relative mb-3">
+                        <Sparkles className="size-8 text-orange-500 animate-pulse" />
+                        <Loader2 className="size-10 text-orange-500/20 animate-spin absolute -inset-1" />
+                      </div>
+                      <p className="text-sm font-medium text-orange-400 text-center animate-pulse">
+                        ✨ AI is analyzing your document...
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <UploadCloud className={`size-8 mb-3 transition-colors ${isDragging ? "text-orange-500" : "text-gray-400"}`} />
+                      <p className="text-sm font-medium text-white text-center">
+                        {selectedFile ? <span className="text-orange-400">{selectedFile.name}</span> : "Drop image, PDF, or CSV"}
+                      </p>
+                      <p className="text-[10px] text-gray-600 mt-2 uppercase tracking-widest">Powered by Gemini AI</p>
+                    </>
+                  )}
                 </div>
               </div>
             </form>
