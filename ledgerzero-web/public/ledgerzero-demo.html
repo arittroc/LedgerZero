@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LedgerZero Motion Demo</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #09090b;
+            --card-bg: rgba(24, 24, 27, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-muted: #a1a1aa;
+            --accent-orange: #ea580c;
+            --accent-green: #22c55e;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            color: var(--text-main);
+            font-family: 'Inter', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            perspective: 1000px;
+        }
+
+        /* Scene Container */
+        .scene {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.8s ease-in-out, transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        .scene.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* Glassmorphic Base */
+        .glass {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* Cursor */
+        .cursor {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            z-index: 100;
+            opacity: 0;
+            transform: translate(100px, 100px);
+            transition: transform 1s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.3s;
+        }
+        
+        .cursor.visible { opacity: 1; }
+        .cursor.clicked { transform: scale(0.8) translate(125px, 125px) !important; }
+
+        /* Scene 1: Button Hook */
+        .new-invoice-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            font-weight: 500;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            position: relative;
+        }
+        
+        .new-invoice-btn.hovered {
+            border-color: var(--accent-orange);
+            box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .new-invoice-btn.clicked {
+            transform: scale(0.95);
+            box-shadow: 0 0 40px rgba(234, 88, 12, 0.6);
+        }
+
+        /* Scene 2: Kinetic Text */
+        .kinetic-text {
+            font-size: 72px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            background: linear-gradient(180deg, #fff 0%, #a1a1aa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Scene 3: Core Engine Matching */
+        .card-container {
+            display: flex;
+            gap: 200px;
+            position: relative;
+            align-items: center;
+            justify-content: center;
+            width: 1000px;
+        }
+
+        .match-card {
+            padding: 24px;
+            width: 320px;
+            transition: all 1s cubic-bezier(0.16, 1, 0.3, 1);
+            position: absolute;
+        }
+
+        .card-left { left: 0; }
+        .card-right { right: 0; }
+
+        .card-header {
+            font-size: 12px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+
+        .card-body {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title { font-weight: 600; font-size: 18px; }
+        .card-amount { font-weight: 500; font-size: 16px; }
+
+        .match-card.merging.card-left { transform: translateX(340px); opacity: 0; }
+        .match-card.merging.card-right { transform: translateX(-340px); opacity: 0; }
+
+        .merged-card {
+            position: absolute;
+            width: 380px;
+            opacity: 0;
+            transform: scale(0.9);
+            border-color: var(--accent-green);
+            box-shadow: 0 0 40px rgba(34, 197, 94, 0.2);
+            transition: all 0.5s ease-out 0.8s;
+            text-align: center;
+            padding: 32px;
+        }
+
+        .merged-card.success {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .success-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--accent-green);
+            border-radius: 50%;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 16px;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        /* Scene 4: Outro */
+        .outro-text {
+            font-size: 48px;
+            font-weight: 500;
+            color: #fff;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease;
+        }
+        
+        .scene.active .outro-text {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Ambient Glows */
+        .glow {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(150px);
+            opacity: 0.15;
+            z-index: -1;
+        }
+        .glow-orange { background: var(--accent-orange); top: -200px; right: -100px; }
+        .glow-green { background: var(--accent-green); bottom: -200px; left: -100px; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Ambient Background Lighting -->
+    <div class="glow glow-orange"></div>
+    <div class="glow glow-green"></div>
+
+    <!-- Custom Cursor -->
+    <svg class="cursor" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M5.5 3.21V20.8C5.5 21.43 6.22 21.78 6.71 21.4L11.43 17.18C11.62 17.01 11.87 16.92 12.13 16.92H19C19.55 16.92 20 16.47 20 15.92V3.21C20 2.66 19.55 2.21 19 2.21H6.5C5.95 2.21 5.5 2.66 5.5 3.21Z" fill="white" stroke="#18181b" stroke-width="1.5"/>
+    </svg>
+
+    <!-- Scene 1: The Hook -->
+    <div id="scene1" class="scene">
+        <div class="new-invoice-btn" id="targetBtn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            New Invoice
+        </div>
+    </div>
+
+    <!-- Scene 2: Value Prop -->
+    <div id="scene2" class="scene">
+        <div class="kinetic-text">
+            Zero Effort<br>Reconciliation
+        </div>
+    </div>
+
+    <!-- Scene 3: Core Engine Matching -->
+    <div id="scene3" class="scene">
+        <div class="card-container">
+            <!-- Left Card -->
+            <div class="glass match-card card-left" id="cardLeft">
+                <div class="card-header">Bank Transaction</div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Razorpay Payment</div>
+                        <div style="font-size: 12px; color: var(--text-muted); margin-top: 4px;">TXN_89_98291...</div>
+                    </div>
+                    <div class="card-amount">₹ 45,000.00</div>
+                </div>
+            </div>
+
+            <!-- Right Card -->
+            <div class="glass match-card card-right" id="cardRight">
+                <div class="card-header" style="color: var(--accent-orange)">Matched Invoice</div>
+                <div class="card-body">
+                    <div>
+                        <div class="card-title">Acme Corp Ltd.</div>
+                        <div style="font-size: 12px; color: var(--accent-orange); margin-top: 4px;">#INV-2024-001</div>
+                    </div>
+                    <div class="card-amount">₹ 45,000.00</div>
+                </div>
+            </div>
+
+            <!-- Merged Success Card -->
+            <div class="glass merged-card" id="cardMerged">
+                <div class="success-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <div style="font-size: 20px; font-weight: 600; margin-bottom: 8px;">Ledger Reconciled</div>
+                <div style="color: var(--text-muted); font-size: 14px;">Razorpay automatically matched with Acme Corp Ltd.</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scene 4: Outro -->
+    <div id="scene4" class="scene">
+        <div class="outro-text">A complete AI financial platform.</div>
+    </div>
+
+<script>
+        // Animation Timeline Engine
+        const sleep = ms => new Promise(r => setTimeout(r, ms));
+        
+        async function runAnimation() {
+            // Get all elements
+            const cursor = document.querySelector('.cursor');
+            const btn = document.getElementById('targetBtn');
+            const s1 = document.getElementById('scene1');
+            const s2 = document.getElementById('scene2');
+            const s3 = document.getElementById('scene3');
+            const s4 = document.getElementById('scene4');
+            const cardLeft = document.getElementById('cardLeft');
+            const cardRight = document.getElementById('cardRight');
+            const cardMerged = document.getElementById('cardMerged');
+
+            // --- RESET ALL STATES ---
+            s1.classList.remove('active');
+            s2.classList.remove('active');
+            s3.classList.remove('active');
+            s4.classList.remove('active');
+            cardLeft.classList.remove('merging');
+            cardRight.classList.remove('merging');
+            cardMerged.classList.remove('success');
+            btn.classList.remove('hovered', 'clicked');
+            cursor.classList.remove('visible', 'clicked');
+            cursor.style.transform = `translate(100px, 100px)`;
+
+            // Wait a moment before starting the sequence
+            await sleep(500);
+
+            // Scene 1: Intro & Click
+            s1.classList.add('active');
+            
+            await sleep(800);
+            cursor.classList.add('visible');
+            cursor.style.transform = `translate(0px, 0px)`; // Move to button
+            btn.classList.add('hovered');
+
+            await sleep(800);
+            btn.classList.add('clicked');
+            cursor.classList.add('clicked');
+            
+            await sleep(200);
+            btn.classList.remove('clicked');
+            cursor.classList.remove('clicked');
+            
+            await sleep(600);
+            s1.classList.remove('active');
+            cursor.classList.remove('visible');
+
+            // Scene 2: Kinetic Text
+            await sleep(800);
+            s2.classList.add('active');
+            
+            await sleep(2500);
+            s2.classList.remove('active');
+
+            // Scene 3: Engine Matching
+            await sleep(800);
+            s3.classList.add('active');
+            
+            // Trigger Merge
+            await sleep(1500);
+            cardLeft.classList.add('merging');
+            cardRight.classList.add('merging');
+            cardMerged.classList.add('success');
+
+            await sleep(3500);
+            s3.classList.remove('active');
+
+            // Scene 4: Outro
+            await sleep(800);
+            s4.classList.add('active');
+
+            // Wait to let the viewer read the final text
+            await sleep(3500);
+
+            // Fade out Scene 4
+            s4.classList.remove('active');
+            
+            // Wait for the fade animation to finish, then loop back to the start!
+            await sleep(1000);
+            runAnimation(); 
+        }
+
+        // Start animation loop when the page loads
+        window.onload = () => {
+            runAnimation();
+        };
+    </script>
+    </script>
+</body>
+</html>

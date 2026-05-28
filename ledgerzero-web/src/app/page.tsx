@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, CheckCircle2, Shield, Zap, BarChart3, Clock } from "lucide-react";
+import { ArrowRight, CheckCircle2, Shield, Zap, Clock, Play } from "lucide-react";
+import DemoModal from "@/components/DemoModal";
 
 export default function LandingPage() {
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-[#050505] text-white selection:bg-orange-500/30 overflow-hidden font-body">
       {/* Ambient Background Gradients */}
@@ -58,8 +62,11 @@ export default function LandingPage() {
                 Get Started <ArrowRight className="size-5 transition-transform group-hover:translate-x-1" />
               </span>
             </Link>
-            <button className="h-16 px-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all font-bold text-white w-full sm:w-auto">
-              Watch Demo
+            <button 
+              onClick={() => setIsDemoOpen(true)}
+              className="h-16 px-8 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-xl hover:bg-white/10 transition-all font-bold text-white w-full sm:w-auto flex items-center justify-center gap-2"
+            >
+              <Play className="size-5 fill-current" /> Watch Demo
             </button>
           </div>
         </section>
@@ -165,6 +172,8 @@ export default function LandingPage() {
           <p>© 2026 LedgerZero. Built for the modern SME.</p>
         </footer>
       </main>
+
+      <DemoModal isOpen={isDemoOpen} onClose={() => setIsDemoOpen(false)} />
 
       <style jsx global>{`
         @keyframes fade-in {
